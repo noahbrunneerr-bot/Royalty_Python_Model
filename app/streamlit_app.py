@@ -534,6 +534,7 @@ REFERENCE_DEFAULTS = {
     "contract_length": 15,
     "entry_multiple": float(REFERENCE_ENTRY_MULTIPLE),
     "exit_multiple": 12.0,
+    "multiple_sensitivity": 1.5,
     "entry_debt": float(REFERENCE_ENTRY_DEBT),
     "ltv_target": 0.50,
     "operating_fee": 0.05,
@@ -988,6 +989,15 @@ with st.sidebar.expander("Scenario Layer", expanded=False):
     stress_rate_delta = st.number_input("Stress: Valuation Rate Δ", value=0.03, step=0.005, format="%.3f")
     stress_exit_delta = st.number_input("Stress: Exit Multiple Δ", value=-1.5, step=0.1)
     stress_vol_delta = st.number_input("Stress: Volatility Δ", value=0.05, step=0.01, format="%.2f")
+    multiple_sensitivity = st.number_input(
+        "Multiple Sensitivity",
+        min_value=0.5,
+        max_value=3.0,
+        value=float(st.session_state.get("multiple_sensitivity", 1.5)),
+        step=0.1,
+        format="%.1f",
+        help="Controls how strongly exit multiples compress or expand as macro-implied valuation rates move.",
+    )
 
 with st.sidebar.expander("Optional Stylised Downside Overlay", expanded=False):
     use_tail_overlay = st.checkbox("Use stylised tail / super-tail overlay", value=False)
@@ -1254,8 +1264,11 @@ def make_decision(mc, risk, hurdle_rate_used):
     irr_mean = mc.get("irr_mean", np.nan)
     moic_mean = mc.get("moic_mean", np.nan)
     npv_mean = mc.get("npv_mean", np.nan)
+    irr_p10 = mc.get("irr_p10", np.nan)
     prob_neg = risk.get("prob_npv_negative", np.nan)
     npv_cvar = risk.get("npv_cvar_5", np.nan)
+
+    hurdle_spread = irr_mean - hurdle_rate_used
 
     gate_irr_ok = irr_mean >= hurdle_rate_used
     gate_moic_ok = moic_mean >= 2.0
@@ -1264,55 +1277,82 @@ def make_decision(mc, risk, hurdle_rate_used):
     hard_gate_pass = all([gate_irr_ok, gate_moic_ok, gate_prob_ok, gate_cvar_ok])
 
     return_score = 0
-    if irr_mean >= hurdle_rate_used + 0.02:
+    if irr_mean >= hurdle_rate_used + 0.03:
         return_score += 3
-    elif irr_mean >= hurdle_rate_used:
+    elif irr_mean >= hurdle_rate_used + 0.01:
         return_score += 2
-    elif irr_mean >= hurdle_rate_used - 0.01:
+    elif irr_mean >= hurdle_rate_used:
         return_score += 1
 
-    if moic_mean >= 2.5:
+    if moic_mean >= 3.0:
+        return_score += 3
+    elif moic_mean >= 2.5:
         return_score += 2
     elif moic_mean >= 2.0:
         return_score += 1
 
-    if npv_mean > 0:
+    if npv_mean > 20:
+        return_score += 2
+    elif npv_mean > 0:
         return_score += 1
 
     risk_score = 0
-    if prob_neg <= 0.20:
+    if prob_neg <= 0.10:
+        risk_score += 3
+    elif prob_neg <= 0.20:
         risk_score += 2
-    elif prob_neg <= 0.40:
+    elif prob_neg <= 0.35:
         risk_score += 1
 
     if npv_cvar > -10:
-        risk_score += 2
+        risk_score += 3
     elif npv_cvar > -20:
+        risk_score += 2
+    elif npv_cvar > -30:
         risk_score += 1
 
-    total_score = return_score + risk_score
+    resilience_score = 0
+    if not pd.isna(irr_p10):
+        if irr_p10 >= hurdle_rate_used - 0.01:
+            resilience_score += 2
+        elif irr_p10 >= hurdle_rate_used - 0.03:
+            resilience_score += 1
 
-    if hard_gate_pass and total_score >= 6 and prob_neg <= 0.30:
+    if hurdle_spread >= 0.02:
+        resilience_score += 2
+    elif hurdle_spread >= 0.00:
+        resilience_score += 1
+
+    total_score = return_score + risk_score + resilience_score
+
+    if hard_gate_pass and total_score >= 9 and prob_neg <= 0.25 and npv_cvar > -15:
         final_decision = "INVEST"
-    elif total_score >= 4:
+    elif total_score >= 5 and prob_neg <= 0.60:
         final_decision = "INVEST WITH CONDITIONS"
     else:
         final_decision = "REJECT"
 
-    if prob_neg > 0.50:
+    if prob_neg > 0.60 or npv_cvar <= -30:
         risk_flag = "HIGH DOWNSIDE RISK"
-    elif prob_neg > 0.35:
+    elif prob_neg > 0.35 or npv_cvar <= -20:
         risk_flag = "ELEVATED DOWNSIDE RISK"
-    elif prob_neg > 0.20:
+    elif prob_neg > 0.20 or npv_cvar <= -10:
         risk_flag = "MODERATE DOWNSIDE RISK"
     else:
         risk_flag = "ACCEPTABLE DOWNSIDE RISK"
 
-    interpretation = {
-        "INVEST": "Attractive investor-oriented risk-return profile. IRR exceeds the hurdle and downside risk remains acceptable.",
-        "INVEST WITH CONDITIONS": "Conditionally investable case. IRR is supportive, but downside, valuation sensitivity, or structural assumptions still require disciplined underwriting.",
-        "REJECT": "The current case does not meet the minimum return and downside requirements under the applied hurdle assumptions.",
-    }[final_decision]
+    if final_decision == "INVEST":
+        interpretation = (
+            "The case meets the minimum return and downside requirements and remains investable under the current macro-consistent underwriting assumptions."
+        )
+    elif final_decision == "INVEST WITH CONDITIONS":
+        interpretation = (
+            "The case is conditionally investable, but valuation sensitivity, downside probability or tail-risk metrics require tighter underwriting discipline and explicit deal protections."
+        )
+    else:
+        interpretation = (
+            "The case does not currently satisfy the required return / downside balance under the applied underwriting assumptions and should not proceed without material repricing or structural improvement."
+        )
 
     return {
         "FINAL_DECISION": final_decision,
@@ -1321,46 +1361,117 @@ def make_decision(mc, risk, hurdle_rate_used):
         "Hard_Gates_Passed": hard_gate_pass,
         "Return_Score": return_score,
         "Risk_Score": risk_score,
+        "Resilience_Score": resilience_score,
         "Total_Score": total_score,
         "Gate_IRR": gate_irr_ok,
         "Gate_MOIC": gate_moic_ok,
         "Gate_ProbNeg": gate_prob_ok,
         "Gate_CVaR": gate_cvar_ok,
+        "Hurdle_Spread": hurdle_spread,
     }
 
 
 def build_underwriting_reasons(mc, risk, hurdle_rate_used, primary_driver):
     irr = mc["irr_mean"]
+    moic = mc["moic_mean"]
+    npv_mean = mc["npv_mean"]
     prob_neg = risk["prob_npv_negative"]
     npv_cvar = risk["npv_cvar_5"]
 
     reasons = []
 
-    if irr >= hurdle_rate_used:
-        reasons.append(f"Return clears hurdle by {irr - hurdle_rate_used:+.2%}.")
+    hurdle_spread = irr - hurdle_rate_used
+    if hurdle_spread >= 0.02:
+        reasons.append(f"Return exceeds the hurdle with a strong spread of {hurdle_spread:+.2%}.")
+    elif hurdle_spread >= 0:
+        reasons.append(f"Return clears the hurdle by {hurdle_spread:+.2%}, but with limited excess buffer.")
     else:
-        reasons.append(f"Return misses hurdle by {irr - hurdle_rate_used:+.2%}.")
+        reasons.append(f"Return misses the hurdle by {hurdle_spread:+.2%}, which weakens standalone investability.")
 
-    if prob_neg > 0.30:
-        reasons.append(f"Downside probability is elevated at {prob_neg:.2%}, which limits valuation buffer.")
+    if moic >= 2.5:
+        reasons.append(f"Value creation remains supportive with a mean MOIC of {moic:.2f}x.")
+    elif moic >= 2.0:
+        reasons.append(f"Mean MOIC of {moic:.2f}x is acceptable, but not materially above minimum return expectations.")
     else:
-        reasons.append(f"Downside probability remains acceptable at {prob_neg:.2%}.")
+        reasons.append(f"Mean MOIC of {moic:.2f}x remains below a robust underwriting comfort zone.")
 
-    if npv_cvar <= -20:
-        reasons.append(f"Tail-risk remains severe with investor NPV CVaR (5%) of {npv_cvar:.2f}.")
+    if npv_mean > 20:
+        reasons.append(f"Expected NPV of {npv_mean:.2f} provides a meaningful valuation cushion.")
+    elif npv_mean > 0:
+        reasons.append(f"Expected NPV remains positive at {npv_mean:.2f}, but the valuation cushion is modest.")
     else:
-        reasons.append(f"Tail-risk remains manageable with investor NPV CVaR (5%) of {npv_cvar:.2f}.")
+        reasons.append(f"Expected NPV is negative at {npv_mean:.2f}, indicating insufficient value support at current assumptions.")
 
-    reasons.append(f"Primary value driver is currently: {primary_driver}.")
+    if prob_neg <= 0.20:
+        reasons.append(f"Downside probability remains contained at {prob_neg:.2%}.")
+    elif prob_neg <= 0.40:
+        reasons.append(f"Downside probability of {prob_neg:.2%} is elevated and should be monitored closely.")
+    else:
+        reasons.append(f"Downside probability is high at {prob_neg:.2%}, which materially weakens robustness.")
+
+    if npv_cvar > -10:
+        reasons.append(f"Tail-risk remains manageable with NPV CVaR (5%) of {npv_cvar:.2f}.")
+    elif npv_cvar > -20:
+        reasons.append(f"Tail-risk is meaningful with NPV CVaR (5%) of {npv_cvar:.2f}, but still within a conditional underwriting range.")
+    else:
+        reasons.append(f"Tail-risk is severe with NPV CVaR (5%) of {npv_cvar:.2f}.")
+
+    reasons.append(f"Primary value driver: {primary_driver}.")
 
     if primary_driver == "Scenario Layer":
-        reasons.append("Joint scenario assumptions around discount rate, exit multiple and volatility drive overall robustness.")
+        reasons.append("Overall robustness is driven primarily by coordinated shifts in discount rate, exit multiple and volatility.")
     elif primary_driver == "Valuation Discount Rate":
-        reasons.append("The investment case is especially sensitive to required-return assumptions and long-duration valuation effects.")
+        reasons.append("The case is especially exposed to required-return assumptions and long-duration valuation effects.")
     else:
-        reasons.append("Contract mechanics, payout timing and structural economics materially influence value and downside.")
+        reasons.append("Structural economics, payout timing and contract mechanics remain material to value creation and downside protection.")
 
     return reasons
+
+
+def build_ic_summary_text(decision, mc, risk, macro_base_rate, hurdle_rate_used, macro_source, fed_display, underwriting_reasons):
+    hard_gates = "Yes" if decision.get("Hard_Gates_Passed", False) else "No"
+
+    reason_block = "\n".join([f"- {r}" for r in underwriting_reasons])
+
+    text = f"""
+INVESTMENT COMMITTEE SUMMARY
+
+Recommendation
+{decision["FINAL_DECISION"]}
+
+Risk Assessment
+{decision["Risk_Flag"]}
+
+Decision Context
+Hard gates passed: {hard_gates}
+Return score: {decision["Return_Score"]}
+Risk score: {decision["Risk_Score"]}
+Resilience score: {decision.get("Resilience_Score", "n/a")}
+Total score: {decision["Total_Score"]}
+
+Key Metrics
+IRR mean: {mc["irr_mean"]:.2%}
+IRR P10: {mc.get("irr_p10", np.nan):.2%}
+MOIC mean: {mc["moic_mean"]:.2f}x
+NPV mean: {mc["npv_mean"]:.2f}
+Probability of negative NPV: {risk["prob_npv_negative"]:.2%}
+NPV CVaR (5%): {risk["npv_cvar_5"]:.2f}
+Hurdle spread: {decision.get("Hurdle_Spread", np.nan):+.2%}
+
+Macro / Valuation Framing
+Macro source: {macro_source}
+Fed Funds: {fed_display}
+Macro-implied base valuation rate: {macro_base_rate:.2%}
+Hurdle rate: {hurdle_rate_used:.2%}
+
+Interpretation
+{decision["Interpretation"]}
+
+Underwriting Rationale
+{reason_block}
+""".strip()
+
+    return text
 
 # =========================
 # Secondary analyses
@@ -1374,7 +1485,7 @@ def build_scenario_table(base_config, base_df):
     neutral_rate = 0.08  # 8% typische required return
 
     # Wie sensitiv Multiples reagieren
-    sensitivity = 1.5
+    sensitivity = float(base_config.get("multiple_sensitivity", 1.5))
 
     rate_diff = macro_base_rate - neutral_rate
 
@@ -1542,6 +1653,7 @@ if run_button:
             "contract_length": contract_length,
             "entry_multiple": entry_multiple,
             "exit_multiple": exit_multiple,
+            "multiple_sensitivity": multiple_sensitivity,
             "valuation_discount_rate": valuation_discount_rate,
             "hurdle_rate": hurdle_rate,
             "entry_debt": entry_debt,
@@ -1607,7 +1719,93 @@ if run_button:
 
     with tab1:
         st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
+            st.subheader("IC Snapshot")
 
+        snap1, snap2, snap3, snap4 = st.columns(4)
+        with snap1:
+            st.metric("Recommendation", decision["FINAL_DECISION"])
+        with snap2:
+            st.metric("Risk Flag", decision["Risk_Flag"])
+        with snap3:
+            st.metric("Total Score", int(decision["Total_Score"]))
+        with snap4:
+            st.metric("Hurdle Spread", f'{decision.get("Hurdle_Spread", np.nan):+.2%}')
+
+        st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
+        st.subheader("Why Invest / Why Not")
+
+        why1, why2 = st.columns(2)
+
+        positive_points = []
+        caution_points = []
+
+        if mc["irr_mean"] >= macro_base_config["hurdle_rate"]:
+            positive_points.append(f'IRR clears the hurdle at {mc["irr_mean"]:.2%}.')
+        else:
+            caution_points.append(f'IRR misses the hurdle at {mc["irr_mean"]:.2%}.')
+
+        if mc["moic_mean"] >= 2.5:
+            positive_points.append(f'MOIC is strong at {mc["moic_mean"]:.2f}x.')
+        elif mc["moic_mean"] >= 2.0:
+            positive_points.append(f'MOIC is acceptable at {mc["moic_mean"]:.2f}x.')
+        else:
+            caution_points.append(f'MOIC is weak at {mc["moic_mean"]:.2f}x.')
+
+        if risk["prob_npv_negative"] <= 0.20:
+            positive_points.append(f'Downside probability remains contained at {risk["prob_npv_negative"]:.2%}.')
+        else:
+            caution_points.append(f'Downside probability is elevated at {risk["prob_npv_negative"]:.2%}.')
+
+        if risk["npv_cvar_5"] > -20:
+            positive_points.append(f'Tail-risk remains within tolerance with NPV CVaR of {risk["npv_cvar_5"]:.2f}.')
+        else:
+            caution_points.append(f'Tail-risk is severe with NPV CVaR of {risk["npv_cvar_5"]:.2f}.')
+
+        with why1:
+            st.markdown("**Why it works**")
+            if positive_points:
+                for p in positive_points:
+                    st.markdown(f"- {p}")
+            else:
+                st.caption("No major strengths identified under the current assumptions.")
+
+        st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
+        st.subheader("Macro Context")
+
+        st.markdown(
+            f"""
+            <div class="method-note">
+            <b>Macro source:</b> {macro_source} &nbsp;&nbsp;&nbsp;
+            <b>Fed Funds:</b> {fed_display} &nbsp;&nbsp;&nbsp;
+            <b>Macro-implied base valuation rate:</b> {macro_base_rate:.2%} &nbsp;&nbsp;&nbsp;
+            <b>Hurdle rate:</b> {macro_base_config["hurdle_rate"]:.2%}
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+
+        st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
+        st.subheader("Decision Scorecard")
+
+        score1, score2, score3, score4 = st.columns(4)
+        with score1:
+            st.metric("Return Score", decision["Return_Score"])
+        with score2:
+            st.metric("Risk Score", decision["Risk_Score"])
+        with score3:
+            st.metric("Resilience Score", decision.get("Resilience_Score", "n/a"))
+        with score4:
+            st.metric("Hard Gates Passed", "Yes" if decision.get("Hard_Gates_Passed", False) else "No")
+    
+    with why2:
+        st.markdown("**What to watch**")
+        if caution_points:
+            for p in caution_points:
+                st.markdown(f"- {p}")
+        else:
+            st.caption("No major caution flags identified under the current assumptions.")
+        
         if plausibility_warnings:
             st.markdown(
                 "<div class='warning-box'><b>Plausibility warnings</b><br>"
@@ -1990,37 +2188,23 @@ if run_button:
             st.download_button("Valuation Rate Sensitivity CSV", df_to_csv_bytes(discount_df), "valuation_rate_sensitivity.csv", "text/csv")
         with x3:
             st.download_button("Top Drivers CSV", df_to_csv_bytes(driver_df), "top_value_drivers.csv", "text/csv")
-        with x4:
-            ic_summary_text = f"""
-INVESTMENT COMMITTEE SUMMARY
-
-Preset:
-Reference Defaults / Manual Override
-
-Decision:
-{decision['FINAL_DECISION']}
-
-Risk level:
-{decision['Risk_Flag']}
-
-Key metrics:
-IRR mean: {mc['irr_mean']:.2%}
-MOIC mean: {mc['moic_mean']:.2f}x
-NPV mean: {mc['npv_mean']:.2f}
-Probability of negative investor NPV: {risk['prob_npv_negative']:.2%}
-NPV CVaR (5%): {risk['npv_cvar_5']:.2f}
-
-Valuation framing:
-Valuation discount rate: {valuation_discount_rate:.2%}
-Hurdle rate: {hurdle_rate:.2%}
-
-Interpretation:
-{decision['Interpretation']}
-
-Underwriting rationale:
-- {chr(10).join(underwriting_reasons)}
-            """.strip()
-            st.download_button("IC Summary TXT", ic_summary_text.encode("utf-8"), "ic_summary.txt", "text/plain")
+       with x4:
+        ic_summary_text = build_ic_summary_text(
+            decision=decision,
+            mc=mc,
+            risk=risk,
+            macro_base_rate=macro_base_rate,
+            hurdle_rate_used=macro_base_config["hurdle_rate"],
+            macro_source=macro_source,
+            fed_display=fed_display,
+            underwriting_reasons=underwriting_reasons,
+        )
+        st.download_button(
+            "IC Summary TXT",
+            ic_summary_text.encode("utf-8"),
+            "ic_summary.txt",
+            "text/plain"
+        )
 
 else:
     st.info("Adjust the model inputs in the sidebar and click “Run Valuation”.")
