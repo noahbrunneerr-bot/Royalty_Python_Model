@@ -1,0 +1,25 @@
+
+PG3 INVESTMENT COMMITTEE SUMMARY
+--------------------------------
+
+Recommendation:
+INVEST WITH RISK MITIGATION
+
+Return Profile:
+- IRR (Mean): 10.48%
+- MOIC (Mean): 2.82x
+- NPV (Mean): 4.65
+
+Risk Profile:
+- Probability of Loss: 33.74%
+- Downside (CVaR 5%): -14.05
+
+Key Interpretation:
+- The deal shows attractive return characteristics with a robust IRR profile.
+- However, downside risk remains material, with a meaningful probability of value destruction.
+- The investment case is sensitive to discount rate assumptions and exit multiples.
+- Driver analysis indicates that discount rate assumptions are the dominant value driver, followed by exit multiple sensitivity.
+- The qualitative overlay does not indicate major structural red flags under the current base-case assumptions.
+
+Conclusion:
+- The opportunity is investable only with careful structuring, downside protection and further diligence on downside scenarios.

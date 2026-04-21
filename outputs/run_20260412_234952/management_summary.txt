@@ -1,0 +1,32 @@
+PG3 INVESTMENT COMMITTEE SUMMARY
+
+1. Overall assessment
+The PG3 case is conditionally investable. While base-case returns are acceptable, the relatively thin margin of safety and sensitivity to key assumptions require disciplined structuring and pricing.
+
+2. Base-case valuation
+Under the 10% base case, the model indicates an IRR of 10.48%, a MOIC of 2.82x, and an expected NPV of 4.65.
+
+3. Downside risk
+The probability of a negative NPV is 33.74%, while NPV CVaR (5%) is -14.05.
+Downside risk is material: the probability of value destruction is elevated, indicating a limited margin of safety under current assumptions.
+
+4. Discount-rate sensitivity
+At a 9% discount rate, expected NPV is 13.79; at 10%, 4.65; and at 11%, -3.45.
+Valuation is highly sensitive to discount rate assumptions, reflecting the long-duration nature of the cashflows. The investment case transitions from clearly positive to negative within a narrow range of required returns.
+
+5. Macro / scenario context
+The strongest macro scenario in the current framework is 'Upside' with an expected NPV of 16.27.
+The weakest macro scenario is 'High_Rate' with an expected NPV of -13.88.
+This confirms that valuation is not only rate-sensitive but also exposed to valuation compression and cashflow uncertainty.
+
+6. Contract intelligence
+In the deterministic contract comparison, the structured royalty changes NPV by -6.63 and total payout by -1.10 versus the simple royalty benchmark.
+In the stylised Monte Carlo contract comparison, the structured royalty changes expected NPV by -5.69 and CVaR by -3.57.
+The contract comparison shows that structured royalty mechanics can reduce present value relative to a simple flat royalty, primarily due to payment lag, caps, and altered payout timing.
+
+7. Investment conclusion
+Final decision: INVEST WITH CONDITIONS.
+Risk flag: MODERATE DOWNSIDE RISK.
+
+Overall, the case offers acceptable base-case returns but remains exposed to material downside risk and valuation sensitivity.
+Investment is justified only under disciplined entry conditions, appropriate pricing, and a clear understanding of the underlying risk profile.

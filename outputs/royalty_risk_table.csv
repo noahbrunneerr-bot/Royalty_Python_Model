@@ -1,0 +1,2 @@
+prob_irr_negative,prob_moic_below_1x,prob_net_cf_negative,prob_no_payback,irr_var_5,irr_cvar_5,net_cf_var_5,net_cf_cvar_5,prob_npv_negative,npv_var_5,npv_cvar_5
+0.998,0.998,0.998,0.998,-0.0401136621560571,-0.04360865611005605,-12086083.47537844,-13092267.453195563,1.0,-28852269.256176602,-29424737.80954622

@@ -1,0 +1,6 @@
+check,value,tolerance,status
+metric_abs_diff_max,8.526512829121202e-14,1e-08,PASS
+yearly_debt_diff_max,5.684341886080802e-14,1e-08,PASS
+yearly_fcf_diff_max,7.105427357601002e-15,1e-08,PASS
+yearly_equity_diff_max,2.842170943040401e-14,1e-08,PASS
+overall_calibration_status,1.0,,PASS

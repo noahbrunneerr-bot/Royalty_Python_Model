@@ -1,0 +1,1 @@
+IC Takeaway: valuation is primarily driven by macro scenario assumptions, highlighting the importance of stress-testing discount rates, exit conditions, and cashflow uncertainty jointly. For the PG3 case, this implies that valuation outcomes are highly sensitive to changes in the capital market environment, resulting in a limited valuation buffer under adverse scenarios.

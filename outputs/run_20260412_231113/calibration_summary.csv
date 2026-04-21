@@ -1,0 +1,4 @@
+metric,excel_value,python_value,delta
+IRR,0.097465,0.097465,0.0
+MOIC,2.477629,2.477629,0.0
+Deterministic NPV @ 10%,-1.796007,-1.796007,0.0

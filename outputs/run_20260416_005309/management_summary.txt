@@ -1,0 +1,34 @@
+
+INVESTMENT COMMITTEE SUMMARY
+
+1. Overall Assessment
+The case is conditionally investable with sensitivity to key assumptions.
+
+2. Return Requirement and Valuation
+The model indicates an IRR of 10.48%, compared to a model discount rate of 10.00%.
+Economically, this discount rate serves as a practical proxy for the investor's required return.
+
+3. Downside Risk
+The probability of a negative NPV is 33.74%.
+The NPV CVaR (5%) is -14.05.
+The case is classified as: MODERATE DOWNSIDE RISK.
+Downside risk is material: the probability of adverse valuation outcomes is elevated, indicating a limited valuation buffer under current assumptions.
+
+4. Discount-Rate Sensitivity
+At a 9% discount rate, expected NPV is nan; at 10%, nan; and at 11%, nan.
+Discount-rate sensitivity was not fully available in this run, but required-return assumptions remain a key value driver.
+
+5. Macro Scenario Context
+The strongest macro scenario in the current framework is N/A with an expected NPV of nan.
+The weakest macro scenario is N/A with an expected NPV of nan.
+This confirms that valuation is not only rate-sensitive but also exposed to valuation compression and cashflow uncertainty.
+
+6. Pricing & Structuring Considerations
+Entry multiple and discount-rate assumptions remain key drivers of value.
+Contract structure remains economically relevant because payout timing, milestones, caps/floors and lag mechanics can materially alter value and downside.
+
+7. Fund-Level Perspective (Illustrative)
+If the discount rate is interpreted as the investor's required net return, an indicative gross return of 15.00% may be required.
+
+8. Final Recommendation
+Final decision: INVEST WITH CONDITIONS

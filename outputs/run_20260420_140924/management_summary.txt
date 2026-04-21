@@ -1,0 +1,36 @@
+INVESTMENT COMMITTEE SUMMARY
+
+1. Overall Assessment
+Decision: INVEST WITH CONDITIONS
+Risk classification: MODERATE DOWNSIDE RISK
+
+2. Return and Valuation
+IRR mean is 10.49% versus hurdle rate 10.00%.
+Expected NPV is 4.74 at a valuation discount rate of 10.00%.
+MOIC mean is 2.82x.
+
+3. Downside Risk
+Probability of negative investor NPV is 33.63%.
+NPV CVaR (5%) is -13.54.
+
+4. Deterministic Reference vs Stochastic Extension
+The deterministic reference case acts as the calibration anchor.
+Monte Carlo extends the same calibrated cashflow base with stochastic uncertainty.
+Deterministic reconciliation status: 1/5 metrics currently marked as MATCH against the Excel ground truth.
+
+5. Primary Underwriting Rationale
+- Return clears hurdle by +0.49%.
+- Downside probability is elevated at 33.63%, which limits valuation buffer.
+- Tail-risk remains manageable with NPV CVaR (5%) of -13.54.
+- Primary value driver is currently: Scenario Layer.
+- Joint scenario assumptions around discount rate, exit multiple and volatility drive overall robustness.
+
+6. Scenario Context
+Best current scenario: Upside with expected NPV 16.36.
+Weakest current scenario: Stress with expected NPV -21.17.
+
+7. Main Driver
+Primary driver currently identified: Scenario Layer.
+
+8. Fund-Level Bridge
+Illustrative gross target return implied by hurdle, fee drag and carry assumptions: 15.00%.

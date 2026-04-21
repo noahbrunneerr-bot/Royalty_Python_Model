@@ -1,0 +1,3 @@
+Key value drivers identified in the sensitivity analysis are: Macro / Scenario, Discount Rate.
+
+This indicates that valuation is not determined evenly across all assumptions. Instead, a small number of parameters dominate the economic outcome and therefore deserve primary attention in deal structuring, pricing, and risk assessment.

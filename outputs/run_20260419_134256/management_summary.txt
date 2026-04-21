@@ -1,0 +1,34 @@
+INVESTMENT COMMITTEE SUMMARY
+
+1. Overall Assessment
+The case is conditionally investable with sensitivity to key assumptions.
+
+2. Return Requirement and Valuation
+The model indicates an IRR of 10.49%, compared to a hurdle rate of 10.00%.
+The valuation layer applies a discount rate of 10.00% for NPV estimation.
+
+3. Downside Risk
+The probability of a negative NPV is 33.63%.
+The NPV CVaR (5%) is -13.54.
+The case is classified as: MODERATE DOWNSIDE RISK.
+Downside risk is material: the probability of adverse valuation outcomes is elevated, indicating a limited valuation buffer under current assumptions.
+
+4. Discount-Rate Sensitivity
+At a 9% valuation discount rate, expected NPV is 13.88; at 10%, 4.74; and at 11%, -3.37.
+Valuation is highly sensitive to discount-rate assumptions, reflecting the long-duration nature of the cashflows. The case transitions from clearly positive to negative within a relatively narrow range.
+
+5. Scenario Context
+The strongest scenario in the current framework is Upside with an expected NPV of 16.36.
+The weakest scenario is Stress with an expected NPV of -21.17.
+This confirms that valuation is exposed not only to discount-rate sensitivity but also to valuation compression and cashflow uncertainty.
+
+6. Pricing & Structure
+The case remains sensitive to pricing discipline and structural assumptions.
+Contract structure remains economically relevant because payout timing, milestones, caps/floors and lag mechanics can materially alter value and downside.
+
+7. Fund-Level Bridge
+The illustrative gross target return implied by hurdle, fee drag and carry assumptions is 15.00%.
+
+8. Interpretation
+The deterministic reference case should be understood as the calibration anchor.
+The Monte Carlo output represents a stochastic extension built on the same calibrated cashflow base.

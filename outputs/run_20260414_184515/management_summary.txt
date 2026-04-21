@@ -1,0 +1,32 @@
+
+INVESTMENT COMMITTEE SUMMARY
+
+1. Overall Assessment
+The case is conditionally investable with sensitivity to key assumptions.
+
+2. Investor Return Profile
+The model indicates an IRR of 10.24%, compared to a target return of 10.00%.
+The expected MOIC is 2.80x and the NPV is 4.57.
+
+3. Downside Risk
+The probability of a negative NPV is 33.78%.
+The NPV CVaR (5%) is -14.21.
+The case is classified as: MODERATE DOWNSIDE RISK.
+
+4. Scenario Robustness
+The valuation remains sensitive to target return assumptions, exit multiples and volatility inputs.
+Stress scenarios indicate how quickly the investment case can deteriorate under adverse conditions.
+
+5. Pricing & Entry Considerations
+Entry multiple and required return assumptions remain key drivers of value.
+Small changes in these parameters materially impact the investment outcome.
+
+6. Tail Risk Considerations
+A stylised tail and super-tail overlay has been applied to capture rare downside events.
+This highlights the potential impact of severe negative revenue shocks.
+
+7. Fund-Level Perspective (Illustrative)
+To achieve a net investor return of 10.00%, an indicative gross return of 15.00% may be required at fund level, depending on fees and carry.
+
+8. Final Recommendation
+Final decision: INVEST WITH CONDITIONS
