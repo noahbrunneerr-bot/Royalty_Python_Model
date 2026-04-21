@@ -1047,6 +1047,8 @@ def make_secondary_config(base_config):
 def build_macro_base_config(base_config):
     macro_df, macro_source = get_macro_data(
         use_fred=base_config.get("use_fred", False)
+        fed_funds = macro_df["fed_funds"].iloc[-1] if "fed_funds" in macro_df.columns else None
+        fed_display = f"{fed_funds:.2f}%" if fed_funds is not None else "n/a"
     )
 
     macro_hist_scenarios = build_macro_scenarios(
@@ -1064,7 +1066,9 @@ def build_macro_base_config(base_config):
     cfg["discount_rate"] = macro_base_rate
     cfg["valuation_discount_rate"] = macro_base_rate
     cfg["macro_source"] = macro_source
-
+    fed_funds = macro_df["fed_funds"].iloc[-1] if "fed_funds" in macro_df.columns else None
+    cfg["fed_funds"] = fed_funds
+    
     return cfg, macro_df, macro_hist_scenarios, macro_source, macro_base_rate
 
 
@@ -1817,12 +1821,13 @@ if run_button:
         st.markdown(
             f"""
             <div class="method-note">
-                <b>Macro source:</b> {macro_source.replace("_", " ").title()} &nbsp;&nbsp;|&nbsp;&nbsp;
-                <b>Macro-implied base valuation rate:</b> {macro_base_rate:.2%}
+                <b>Macro source:</b> {macro_source} &nbsp;&nbsp;&nbsp;&nbsp;
+                <b>Macro-implied base valuation rate:</b> {macro_base_rate:.2%} &nbsp;&nbsp;&nbsp;&nbsp;
+                <b>Fed Funds:</b> {fed_display}
             </div>
             """,
             unsafe_allow_html=True,
-    )
+        )
         st.markdown(
             '<div class="scenario-note">Scenario cards summarise underwriting outcomes under coordinated shifts in valuation rate, exit multiple and cashflow volatility.</div>',
             unsafe_allow_html=True,
