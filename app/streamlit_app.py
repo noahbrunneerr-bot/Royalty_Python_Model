@@ -1828,11 +1828,12 @@ if run_button:
                 f"Recommendation: {decision['FINAL_DECISION']}\n\n"
                 f"{interpretation_text}"
         )
-        else:
-            st.error(
-                f"Recommendation: {decision['FINAL_DECISION']}\n\n"
-                f"{interpretation_text}"
-            )
+    else:
+        st.error(
+            f"Recommendation: {decision['FINAL_DECISION']}\n\n"
+            f"{interpretation_text}"
+        )
+
 
         st.subheader("Deal Header")
         h1, h2, h3, h4 = st.columns(4)
@@ -2201,30 +2202,30 @@ if run_button:
         with d5:
             st.download_button("Run Metadata JSON", json_to_bytes(run_metadata), "run_metadata.json", "application/json")
 
-        x1, x2, x3, x4 = st.columns(4)
+         x1, x2, x3, x4 = st.columns(4)
         with x1:
             st.download_button("Scenario Comparison CSV", df_to_csv_bytes(scenario_df), "scenario_comparison.csv", "text/csv")
         with x2:
             st.download_button("Valuation Rate Sensitivity CSV", df_to_csv_bytes(discount_df), "valuation_rate_sensitivity.csv", "text/csv")
         with x3:
             st.download_button("Top Drivers CSV", df_to_csv_bytes(driver_df), "top_value_drivers.csv", "text/csv")
-       with x4:
-        ic_summary_text = build_ic_summary_text(
-            decision=decision,
-            mc=mc,
-            risk=risk,
-            macro_base_rate=macro_base_rate,
-            hurdle_rate_used=macro_base_config["hurdle_rate"],
-            macro_source=macro_source,
-            fed_display=fed_display,
-            underwriting_reasons=underwriting_reasons,
-        )
-        st.download_button(
-            "IC Summary TXT",
-            ic_summary_text.encode("utf-8"),
-            "ic_summary.txt",
-            "text/plain"
-        )
+    with x4:
+            ic_summary_text = build_ic_summary_text(
+                decision=decision,
+                mc=mc,
+                risk=risk,
+                macro_base_rate=macro_base_rate,
+                hurdle_rate_used=macro_base_config["hurdle_rate"],
+                macro_source=macro_source,
+                fed_display=fed_display,
+                underwriting_reasons=underwriting_reasons,
+            )
+            st.download_button(
+                "IC Summary TXT",
+                ic_summary_text.encode("utf-8"),
+                "ic_summary.txt",
+                "text/plain"
+            )
 
 else:
     st.info("Adjust the model inputs in the sidebar and click “Run Valuation”.")
