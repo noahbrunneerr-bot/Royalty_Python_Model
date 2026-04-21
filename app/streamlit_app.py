@@ -1374,7 +1374,7 @@ def build_scenario_table(base_config, base_df):
             "Scenario": "Upside",
             "Scenario Label": "Lower-rate, higher-multiple, lower-volatility case.",
             "Valuation Discount Rate": max(0.01, macro_base_rate - 0.01),
-            "Exit Multiple": safe_clip(base_exit_multiple * 1.04, low=1.0),
+            "Exit Multiple": safe_clip(base_exit_multiple * 1.10, low=1.0),
             "Volatility": safe_clip(base_config["sigma_cf"] - 0.02, low=0.01),
         },
         {
@@ -1387,15 +1387,15 @@ def build_scenario_table(base_config, base_df):
         {
             "Scenario": "High-Rate",
             "Scenario Label": "Higher-rate and higher-volatility case.",
-            "Valuation Discount Rate": macro_base_rate + 0.02,
-            "Exit Multiple": safe_clip(base_exit_multiple * 0.92, low=1.0),
+            "Valuation Discount Rate": macro_base_rate + 0.03,
+            "Exit Multiple": safe_clip(base_exit_multiple * 0.85, low=1.0),
             "Volatility": safe_clip(base_config["sigma_cf"] + 0.03, low=0.01),
         },
         {
             "Scenario": "Stress",
             "Scenario Label": "Higher-rate, lower-multiple, higher-volatility case.",
-            "Valuation Discount Rate": macro_base_rate + 0.03,
-            "Exit Multiple": safe_clip(base_exit_multiple * 0.88, low=1.0),
+            "Valuation Discount Rate": macro_base_rate + 0.05,
+            "Exit Multiple": safe_clip(base_exit_multiple * 0.75, low=1.0),
             "Volatility": safe_clip(base_config["sigma_cf"] + 0.05, low=0.01),
         },
     ]
