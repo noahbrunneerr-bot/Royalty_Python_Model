@@ -2202,7 +2202,7 @@ if run_button:
         with d5:
             st.download_button("Run Metadata JSON", json_to_bytes(run_metadata), "run_metadata.json", "application/json")
 
-         x1, x2, x3, x4 = st.columns(4)
+        x1, x2, x3, x4 = st.columns(4)
         with x1:
             st.download_button("Scenario Comparison CSV", df_to_csv_bytes(scenario_df), "scenario_comparison.csv", "text/csv")
         with x2:
