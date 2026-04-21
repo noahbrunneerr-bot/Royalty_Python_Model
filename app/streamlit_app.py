@@ -1827,12 +1827,12 @@ if run_button:
             st.warning(
                 f"Recommendation: {decision['FINAL_DECISION']}\n\n"
                 f"{interpretation_text}"
-        )
-    else:
-        st.error(
-            f"Recommendation: {decision['FINAL_DECISION']}\n\n"
-            f"{interpretation_text}"
-        )
+            )
+        else:
+            st.error(
+                f"Recommendation: {decision['FINAL_DECISION']}\n\n"
+                f"{interpretation_text}"
+            )
 
 
         st.subheader("Deal Header")
