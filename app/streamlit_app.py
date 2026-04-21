@@ -26,6 +26,7 @@ from src.pir_waterfall_engine import (
 )
 from src.metrics import monte_carlo_risk_metrics
 from src.mc import run_pg3_monte_carlo as run_reference_monte_carlo, summarize_pg3_mc
+from src.inputs.macro_data import get_macro_data, build_macro_scenarios
 
 # =========================
 # Page config
@@ -545,6 +546,8 @@ REFERENCE_DEFAULTS = {
     "interest_rate": 0.06,
     "fund_mgmt_fee": 0.02,
     "fund_carry": 0.20,
+    "use_fred": False,
+    "macro_lookback_months": 12,
 }
 
 if "defaults_loaded" not in st.session_state:
@@ -1014,6 +1017,23 @@ with st.sidebar.expander("Illustrative Fund-Level Bridge", expanded=False):
         format="%.2f",
     )
 
+with st.sidebar.expander("Macro / FRED", expanded=False):
+    use_fred = st.checkbox(
+        "Use FRED live data",
+        value=bool(st.session_state.get("use_fred", False)),
+    )
+    macro_lookback_months = st.number_input(
+        "Macro Lookback Months",
+        min_value=3,
+        max_value=60,
+        value=int(st.session_state.get("macro_lookback_months", 12)),
+        step=1,
+    )
+
+    st.caption(
+        "If enabled, the app tries to pull live macro data from FRED. If unavailable, it falls back to the local CSV sample."
+    )
+
 run_button = st.sidebar.button("Run Valuation", type="primary")
 
 # =========================
@@ -1023,6 +1043,29 @@ def make_secondary_config(base_config):
     cfg = base_config.copy()
     cfg["n_simulations"] = max(700, min(1600, int(base_config["n_simulations"] / 4)))
     return cfg
+
+def build_macro_base_config(base_config):
+    macro_df, macro_source = get_macro_data(
+        use_fred=base_config.get("use_fred", False)
+    )
+
+    macro_hist_scenarios = build_macro_scenarios(
+        macro_df,
+        use_recent_n=base_config.get("macro_lookback_months", 12),
+    )
+
+    base_macro_row = macro_hist_scenarios.loc[
+        macro_hist_scenarios["Scenario"] == "Base"
+    ].iloc[0]
+
+    macro_base_rate = float(base_macro_row["discount_rate"])
+
+    cfg = base_config.copy()
+    cfg["discount_rate"] = macro_base_rate
+    cfg["valuation_discount_rate"] = macro_base_rate
+    cfg["macro_source"] = macro_source
+
+    return cfg, macro_df, macro_hist_scenarios, macro_source, macro_base_rate
 
 
 def apply_tail_super_tail_overlay(
@@ -1194,6 +1237,9 @@ def run_sim(config, base_df):
             "fund_mgmt_fee": fund_mgmt_fee_used,
             "fund_carry": fund_carry_used,
             "illustrative_gross_target_return": illustrative_gross_target_used,
+                        "use_fred": config.get("use_fred", False),
+                        "macro_lookback_months": config.get("macro_lookback_months", None),
+                        "macro_source": config.get("macro_source", None),
         },
     }
 
@@ -1316,42 +1362,45 @@ def build_underwriting_reasons(mc, risk, hurdle_rate_used, primary_driver):
 # Secondary analyses
 # =========================
 def build_scenario_table(base_config, base_df):
+    macro_cfg, macro_df, macro_hist_scenarios, macro_source, macro_base_rate = build_macro_base_config(base_config)
+
     scenario_inputs = [
         {
             "Scenario": "Upside",
             "Scenario Label": "Lower-rate, higher-multiple, lower-volatility case.",
-            "Valuation Discount Rate": safe_clip(base_config["valuation_discount_rate"] + upside_rate_delta, low=0.01),
-            "Exit Multiple": safe_clip(base_config["exit_multiple"] + upside_exit_delta, low=1.0),
-            "Volatility": safe_clip(base_config["sigma_cf"] + upside_vol_delta, low=0.01),
+            "Valuation Discount Rate": max(0.01, macro_base_rate - 0.01),
+            "Exit Multiple": safe_clip(base_config["exit_multiple"] + 0.5, low=1.0),
+            "Volatility": safe_clip(base_config["sigma_cf"] - 0.02, low=0.01),
         },
         {
             "Scenario": "Base",
             "Scenario Label": "Reference underwriting assumptions.",
-            "Valuation Discount Rate": base_config["valuation_discount_rate"],
+            "Valuation Discount Rate": macro_base_rate,
             "Exit Multiple": base_config["exit_multiple"],
             "Volatility": base_config["sigma_cf"],
         },
         {
             "Scenario": "High-Rate",
             "Scenario Label": "Higher-rate and higher-volatility case.",
-            "Valuation Discount Rate": safe_clip(base_config["valuation_discount_rate"] + high_rate_delta, low=0.01),
-            "Exit Multiple": safe_clip(base_config["exit_multiple"] + high_rate_exit_delta, low=1.0),
-            "Volatility": safe_clip(base_config["sigma_cf"] + high_rate_vol_delta, low=0.01),
+            "Valuation Discount Rate": macro_base_rate + 0.02,
+            "Exit Multiple": safe_clip(base_config["exit_multiple"] - 1.0, low=1.0),
+            "Volatility": safe_clip(base_config["sigma_cf"] + 0.03, low=0.01),
         },
         {
             "Scenario": "Stress",
             "Scenario Label": "Higher-rate, lower-multiple, higher-volatility case.",
-            "Valuation Discount Rate": safe_clip(base_config["valuation_discount_rate"] + stress_rate_delta, low=0.01),
-            "Exit Multiple": safe_clip(base_config["exit_multiple"] + stress_exit_delta, low=1.0),
-            "Volatility": safe_clip(base_config["sigma_cf"] + stress_vol_delta, low=0.01),
+            "Valuation Discount Rate": macro_base_rate + 0.03,
+            "Exit Multiple": safe_clip(base_config["exit_multiple"] - 1.5, low=1.0),
+            "Volatility": safe_clip(base_config["sigma_cf"] + 0.05, low=0.01),
         },
     ]
 
     rows = []
-    quick_cfg = make_secondary_config(base_config)
+    quick_cfg = make_secondary_config(macro_cfg)
 
     for s in scenario_inputs:
         cfg = quick_cfg.copy()
+        cfg["discount_rate"] = s["Valuation Discount Rate"]
         cfg["valuation_discount_rate"] = s["Valuation Discount Rate"]
         cfg["hurdle_rate"] = base_config["hurdle_rate"]
         cfg["exit_multiple"] = s["Exit Multiple"]
@@ -1377,16 +1426,26 @@ def build_scenario_table(base_config, base_df):
             "Risk Flag": dec["Risk_Flag"],
         })
 
-    return pd.DataFrame(rows).round(4)
+    scenario_df = pd.DataFrame(rows).round(4)
+    return scenario_df, macro_df, macro_hist_scenarios, macro_source, macro_base_rate
 
 
 def build_discount_rate_sensitivity(base_config, base_df):
-    grid = [0.09, 0.10, 0.11, 0.12]
+    macro_cfg, macro_df, macro_hist_scenarios, macro_source, macro_base_rate = build_macro_base_config(base_config)
+
+    grid = [
+        max(0.01, macro_base_rate - 0.01),
+        macro_base_rate,
+        macro_base_rate + 0.01,
+        macro_base_rate + 0.02,
+    ]
+
     rows = []
-    quick_cfg = make_secondary_config(base_config)
+    quick_cfg = make_secondary_config(macro_cfg)
 
     for dr in grid:
         cfg = quick_cfg.copy()
+        cfg["discount_rate"] = dr
         cfg["valuation_discount_rate"] = dr
         cfg["hurdle_rate"] = base_config["hurdle_rate"]
         cfg["scenario_name"] = f"Valuation_{dr:.2%}"
@@ -1485,22 +1544,34 @@ if run_button:
             "fund_mgmt_fee": fund_mgmt_fee,
             "fund_carry": fund_carry,
             "illustrative_gross_target_return": illustrative_gross_target_return,
+            "use_fred": use_fred,
+            "macro_lookback_months": macro_lookback_months,
         }
 
-        results = run_sim(base_config, reference_clean)
+        macro_base_config, macro_df, macro_hist_scenarios, macro_source, macro_base_rate = build_macro_base_config(base_config)
+
+        results = run_sim(macro_base_config, reference_clean)
         det = results["deterministic"]
         mc = results["monte_carlo"]
         risk = results["risk"]
         mc_raw = results["raw_mc"]
         overlay_stats = results["tail_overlay"]
 
-        decision = make_decision(mc, risk, hurdle_rate)
-        scenario_df = build_scenario_table(base_config, reference_clean)
+        decision = make_decision(mc, risk, macro_base_config["hurdle_rate"])
+
+        scenario_df, macro_df, macro_hist_scenarios, macro_source, macro_base_rate = build_scenario_table(
+            base_config, reference_clean
+        )
         discount_df = build_discount_rate_sensitivity(base_config, reference_clean)
         driver_df = build_driver_table(scenario_df, discount_df)
 
         primary_driver = driver_df.iloc[0]["Driver"] if not driver_df.empty else "Valuation Discount Rate"
-        underwriting_reasons = build_underwriting_reasons(mc, risk, hurdle_rate, primary_driver)
+        underwriting_reasons = build_underwriting_reasons(
+            mc,
+            risk,
+            macro_base_config["hurdle_rate"],
+            primary_driver,
+        )
 
         run_metadata = {
             "preset": "Reference Defaults / Manual Override",
@@ -1606,7 +1677,7 @@ if run_button:
         c_ref1, c_ref2, c_ref3, c_ref4 = st.columns(4)
         c_ref1.metric("Deterministic IRR", fmt_pct(det["IRR"]))
         c_ref2.metric("Deterministic MOIC", fmt_x(det["MOIC"]))
-        c_ref3.metric("Valuation Discount Rate", fmt_pct(valuation_discount_rate))
+        c_ref3.metric("Valuation Discount Rate", fmt_pct(macro_base_rate))
         c_ref4.metric("Hurdle Rate", fmt_pct(hurdle_rate))
 
         st.markdown(
@@ -1668,7 +1739,7 @@ if run_button:
         r1, r2, r3 = st.columns(3)
         r1.metric("Prob. Negative NPV", fmt_pct(risk["prob_npv_negative"]))
         r2.metric("NPV CVaR (5%)", fmt_num(risk["npv_cvar_5"]))
-        r3.metric("Valuation Discount Rate", fmt_pct(valuation_discount_rate))
+        r3.metric("Valuation Discount Rate", fmt_pct(macro_base_rate))
 
         f1, f2, f3 = st.columns(3)
         f1.metric("Hurdle Spread", f"{(mc['irr_mean'] - hurdle_rate):+.2%}")
@@ -1743,6 +1814,15 @@ if run_button:
     with tab2:
         st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
         st.subheader("Scenario / Robustness View")
+        st.markdown(
+            f"""
+            <div class="method-note">
+                <b>Macro source:</b> {macro_source.replace("_", " ").title()} &nbsp;&nbsp;|&nbsp;&nbsp;
+                <b>Macro-implied base valuation rate:</b> {macro_base_rate:.2%}
+            </div>
+            """,
+            unsafe_allow_html=True,
+    )
         st.markdown(
             '<div class="scenario-note">Scenario cards summarise underwriting outcomes under coordinated shifts in valuation rate, exit multiple and cashflow volatility.</div>',
             unsafe_allow_html=True,
