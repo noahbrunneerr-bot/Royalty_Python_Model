@@ -1044,12 +1044,9 @@ def make_secondary_config(base_config):
     cfg["n_simulations"] = max(700, min(1600, int(base_config["n_simulations"] / 4)))
     return cfg
 
-def build_macro_base_config(base_config):
-    macro_df, macro_source = get_macro_data(
-        use_fred=base_config.get("use_fred", False)
-        fed_funds = macro_df["fed_funds"].iloc[-1] if "fed_funds" in macro_df.columns else None
-        fed_display = f"{fed_funds:.2f}%" if fed_funds is not None else "n/a"
-    )
+use_fred = base_config.get("use_fred", False)
+
+macro_df, macro_source = get_macro_data(use_fred=use_fred)
 
     macro_hist_scenarios = build_macro_scenarios(
         macro_df,
@@ -1066,9 +1063,10 @@ def build_macro_base_config(base_config):
     cfg["discount_rate"] = macro_base_rate
     cfg["valuation_discount_rate"] = macro_base_rate
     cfg["macro_source"] = macro_source
+
     fed_funds = macro_df["fed_funds"].iloc[-1] if "fed_funds" in macro_df.columns else None
     cfg["fed_funds"] = fed_funds
-    
+
     return cfg, macro_df, macro_hist_scenarios, macro_source, macro_base_rate
 
 
@@ -1553,6 +1551,9 @@ if run_button:
         }
 
         macro_base_config, macro_df, macro_hist_scenarios, macro_source, macro_base_rate = build_macro_base_config(base_config)
+
+        fed_funds = macro_base_config.get("fed_funds")
+        fed_display = f"{fed_funds:.2f}%" if fed_funds is not None else "n/a"
 
         results = run_sim(macro_base_config, reference_clean)
         det = results["deterministic"]
