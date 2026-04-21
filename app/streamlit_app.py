@@ -1374,7 +1374,7 @@ def build_scenario_table(base_config, base_df):
     neutral_rate = 0.08  # 8% typische required return
 
     # Wie sensitiv Multiples reagieren
-    sensitivity = 2.0
+    sensitivity = 1.5
 
     rate_diff = macro_base_rate - neutral_rate
 
