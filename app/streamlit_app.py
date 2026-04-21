@@ -1367,34 +1367,35 @@ def build_underwriting_reasons(mc, risk, hurdle_rate_used, primary_driver):
 # =========================
 def build_scenario_table(base_config, base_df):
     macro_cfg, macro_df, macro_hist_scenarios, macro_source, macro_base_rate = build_macro_base_config(base_config)
+    base_exit_multiple = float(base_config["exit_multiple"])
 
     scenario_inputs = [
         {
             "Scenario": "Upside",
             "Scenario Label": "Lower-rate, higher-multiple, lower-volatility case.",
             "Valuation Discount Rate": max(0.01, macro_base_rate - 0.01),
-            "Exit Multiple": safe_clip(base_config["exit_multiple"] + 0.5, low=1.0),
+            "Exit Multiple": safe_clip(base_exit_multiple * 1.04, low=1.0),
             "Volatility": safe_clip(base_config["sigma_cf"] - 0.02, low=0.01),
         },
         {
             "Scenario": "Base",
             "Scenario Label": "Reference underwriting assumptions.",
             "Valuation Discount Rate": macro_base_rate,
-            "Exit Multiple": base_config["exit_multiple"],
+            "Exit Multiple": base_exit_multiple,
             "Volatility": base_config["sigma_cf"],
         },
         {
             "Scenario": "High-Rate",
             "Scenario Label": "Higher-rate and higher-volatility case.",
             "Valuation Discount Rate": macro_base_rate + 0.02,
-            "Exit Multiple": safe_clip(base_config["exit_multiple"] - 1.0, low=1.0),
+            "Exit Multiple": safe_clip(base_exit_multiple * 0.92, low=1.0),
             "Volatility": safe_clip(base_config["sigma_cf"] + 0.03, low=0.01),
         },
         {
             "Scenario": "Stress",
             "Scenario Label": "Higher-rate, lower-multiple, higher-volatility case.",
             "Valuation Discount Rate": macro_base_rate + 0.03,
-            "Exit Multiple": safe_clip(base_config["exit_multiple"] - 1.5, low=1.0),
+            "Exit Multiple": safe_clip(base_exit_multiple * 0.88, low=1.0),
             "Volatility": safe_clip(base_config["sigma_cf"] + 0.05, low=0.01),
         },
     ]
