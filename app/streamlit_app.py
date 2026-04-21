@@ -1044,9 +1044,11 @@ def make_secondary_config(base_config):
     cfg["n_simulations"] = max(700, min(1600, int(base_config["n_simulations"] / 4)))
     return cfg
 
-use_fred = base_config.get("use_fred", False)
+def build_macro_base_config(base_config):
 
-macro_df, macro_source = get_macro_data(use_fred=use_fred)
+    use_fred = base_config.get("use_fred", False)
+
+    macro_df, macro_source = get_macro_data(use_fred=use_fred)
 
     macro_hist_scenarios = build_macro_scenarios(
         macro_df,
