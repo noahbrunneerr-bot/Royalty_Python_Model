@@ -190,9 +190,11 @@ def load_macro_series_from_fred(
 
         return df
 
-    except Exception:
+    except Exception as e:
         df = load_macro_series_from_csv(csv_fallback_path)
         df["source"] = "csv_fallback_request_failed"
+        df["source_detail"] = f"{type(e).__name__}: {e}"
+        print(f"[FRED ERROR] {type(e).__name__}: {e}")
         return df
 
 
@@ -220,8 +222,11 @@ def get_macro_data(
         df["source"] = "csv_fallback_forced"
 
     source = str(df["source"].iloc[-1]) if "source" in df.columns and not df.empty else "unknown"
-    return df, source
 
+    if "source_detail" in df.columns and not df.empty:
+        print(f"[MACRO SOURCE DETAIL] {df['source_detail'].iloc[-1]}")
+
+    return df, source
 
 def infer_macro_regime(latest_row: pd.Series | dict) -> str:
     """
