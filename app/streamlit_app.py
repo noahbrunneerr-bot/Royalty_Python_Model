@@ -1719,7 +1719,7 @@ if run_button:
 
     with tab1:
         st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
-            st.subheader("IC Snapshot")
+        st.subheader("IC Snapshot")
 
         snap1, snap2, snap3, snap4 = st.columns(4)
         with snap1:
@@ -1769,6 +1769,14 @@ if run_button:
             else:
                 st.caption("No major strengths identified under the current assumptions.")
 
+        with why2:
+            st.markdown("**What to watch**")
+            if caution_points:
+                for p in caution_points:
+                    st.markdown(f"- {p}")
+            else:
+                st.caption("No major caution flags identified under the current assumptions.")
+
         st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
         st.subheader("Macro Context")
 
@@ -1784,7 +1792,6 @@ if run_button:
             unsafe_allow_html=True,
         )
 
-
         st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
         st.subheader("Decision Scorecard")
 
@@ -1797,14 +1804,6 @@ if run_button:
             st.metric("Resilience Score", decision.get("Resilience_Score", "n/a"))
         with score4:
             st.metric("Hard Gates Passed", "Yes" if decision.get("Hard_Gates_Passed", False) else "No")
-    
-    with why2:
-        st.markdown("**What to watch**")
-        if caution_points:
-            for p in caution_points:
-                st.markdown(f"- {p}")
-        else:
-            st.caption("No major caution flags identified under the current assumptions.")
         
         if plausibility_warnings:
             st.markdown(
@@ -1814,9 +1813,30 @@ if run_button:
                 unsafe_allow_html=True,
             )
 
+        st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
+        st.subheader("IC Interpretation")
+
+        interpretation_text = decision.get("Interpretation", "No interpretation available.")
+
+        if decision["FINAL_DECISION"] == "INVEST":
+            st.success(
+                f"Recommendation: {decision['FINAL_DECISION']}\n\n"
+                f"{interpretation_text}"
+            )
+        elif decision["FINAL_DECISION"] == "INVEST WITH CONDITIONS":
+            st.warning(
+                f"Recommendation: {decision['FINAL_DECISION']}\n\n"
+                f"{interpretation_text}"
+        )
+        else:
+            st.error(
+                f"Recommendation: {decision['FINAL_DECISION']}\n\n"
+                f"{interpretation_text}"
+            )
+
         st.subheader("Deal Header")
         h1, h2, h3, h4 = st.columns(4)
-        h1.metric("IRR Mean", fmt_pct(mc["irr_mean"]), delta=f"{(mc['irr_mean'] - hurdle_rate):+.2%} vs hurdle")
+        h1.metric("IRR Mean", fmt_pct(mc["irr_mean"]), delta=f"{decision.get('Hurdle_Spread', np.nan):+.2%} vs hurdle")
         h2.metric("MOIC Mean", fmt_x(mc["moic_mean"]), delta=f"{mc['moic_mean'] - 2.0:+.2f}x vs 2.0x")
         h3.metric("Expected NPV", fmt_num(mc["npv_mean"]))
         h4.metric("Prob(NPV < 0)", fmt_pct(risk["prob_npv_negative"]))
@@ -1846,7 +1866,7 @@ if run_button:
         with s2:
             st.metric("Hard Gates Passed", "Yes" if decision["Hard_Gates_Passed"] else "No")
         with s3:
-            st.metric("Hurdle Spread", f"{(mc['irr_mean'] - hurdle_rate):+.2%}")
+            st.metric("Hurdle Spread", f"{(mc['irr_mean'] - macro_base_config['hurdle_rate']):+.2%}")
 
         st.caption("Hard gates are necessary but not sufficient; final classification also reflects the combined return/risk score.")
 
@@ -1898,7 +1918,7 @@ if run_button:
         c_ref1.metric("Deterministic IRR", fmt_pct(det["IRR"]))
         c_ref2.metric("Deterministic MOIC", fmt_x(det["MOIC"]))
         c_ref3.metric("Valuation Discount Rate", fmt_pct(macro_base_rate))
-        c_ref4.metric("Hurdle Rate", fmt_pct(hurdle_rate))
+        c_ref4.metric("Hurdle Rate", fmt_pct(macro_base_config["hurdle_rate"]))
 
         st.markdown(
             """
