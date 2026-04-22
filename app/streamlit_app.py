@@ -2120,6 +2120,7 @@ if run_button:
                 "Decision",
                 "Risk Flag",
             ]]
+        )
         render_clean_table(
             scenario_table_display,
             decision_col="Decision",
