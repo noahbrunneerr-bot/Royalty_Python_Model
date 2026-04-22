@@ -2065,38 +2065,39 @@ if run_button:
         st.markdown("## Top Value Drivers")
         max_impact = driver_df["Impact Score"].max() if not driver_df.empty else 1.0
 
-        for _, row in driver_df.iterrows():
-            impact_ratio = 0 if max_impact == 0 else min(row["Impact Score"] / max_impact, 1.0)
-            fill_pct = impact_ratio * 100
-                driver_name = row["Driver"]
+for _, row in driver_df.iterrows():
+    impact_ratio = 0 if max_impact == 0 else min(row["Impact Score"] / max_impact, 1.0)
+    fill_pct = impact_ratio * 100
 
-                if driver_name == "Valuation Discount Rate":
-                    explanation = "Primary sensitivity driver — small changes materially impact NPV."
-                elif driver_name == "Scenario Layer":
-                    explanation = "Macro + multiple + volatility jointly define robustness."
-                else:
-                    explanation = "Structural contract features shape downside protection."
+    driver_name = row["Driver"]
 
-            st.markdown(
-                f"""
-                <div class="driver-row">
-                    <div class="driver-main">
-                        <div class="driver-rank">#{int(row['Rank'])}</div>
-                        <div class="driver-title">{row['Driver']}</div>
-                        <div class="driver-desc">{row['Why it matters']}</div>
-                        <div class="driver-desc" style="margin-top:6px; color:#64748b;">{explanation}</div>
-                    </div>
-                    <div class="driver-side">
-                        <div class="driver-side-label">Impact Score</div>
-                        <div class="driver-side-value">{row['Impact Score']:.2f}</div>
-                        <div class="driver-bar-wrap">
-                            <div class="driver-bar-fill" style="width:{fill_pct:.1f}%;"></div>
-                        </div>
-                    </div>
+    if driver_name == "Valuation Discount Rate":
+        explanation = "Primary sensitivity driver — small changes materially impact NPV."
+    elif driver_name == "Scenario Layer":
+        explanation = "Macro + multiple + volatility jointly define robustness."
+    else:
+        explanation = "Structural contract features shape downside protection."
+
+    st.markdown(
+        f"""
+        <div class="driver-row">
+            <div class="driver-main">
+                <div class="driver-rank">#{int(row['Rank'])}</div>
+                <div class="driver-title">{row['Driver']}</div>
+                <div class="driver-desc">{row['Why it matters']}</div>
+                <div class="driver-desc" style="margin-top:6px; color:#64748b;">{explanation}</div>
+            </div>
+            <div class="driver-side">
+                <div class="driver-side-label">Impact Score</div>
+                <div class="driver-side-value">{row['Impact Score']:.2f}</div>
+                <div class="driver-bar-wrap">
+                    <div class="driver-bar-fill" style="width:{fill_pct:.1f}%"></div>
                 </div>
-                """,
-                unsafe_allow_html=True,
-            )
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
         st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
         st.subheader("Optional Stylised Downside Overlay")
