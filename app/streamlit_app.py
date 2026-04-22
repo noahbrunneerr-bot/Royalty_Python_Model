@@ -1341,23 +1341,26 @@ def make_decision(mc, risk, hurdle_rate_used):
     else:
         risk_flag = "ACCEPTABLE DOWNSIDE RISK"
 
-     if final_decision == "INVEST":
-         if return_score >= 4 and risk_score >= 4:
+    # Interpretation
+    if final_decision == "INVEST":
+        if return_score >= 4 and risk_score >= 4:
             interpretation = (
                 "Strong risk-return profile with comfortable buffer above hurdle and contained downside risk."
             )
-          else:
-              interpretation = (
-                 "Investment meets minimum thresholds, but limited buffer to hurdle suggests disciplined entry pricing is required."
-              )
-        elif final_decision == "INVEST WITH CONDITIONS":
-            interpretation = (
-                "The case is conditionally investable, but valuation sensitivity, downside probability or tail-risk metrics require tighter underwriting discipline and explicit deal protections."
-            )
         else:
             interpretation = (
-                "The case does not currently satisfy the required return / downside balance under the applied underwriting assumptions and should not proceed without material repricing or structural improvement."
+                "Investment meets minimum thresholds, but limited buffer to hurdle suggests disciplined entry pricing is required."
             )
+
+    elif final_decision == "INVEST WITH CONDITIONS":
+        interpretation = (
+            "The case is conditionally investable, but valuation sensitivity, downside probability or tail-risk metrics require tighter underwriting discipline and explicit deal protections."
+        )
+
+    else:
+        interpretation = (
+            "The case does not currently satisfy the required return / downside balance under the applied underwriting assumptions and should not proceed without material repricing or structural improvement."
+        )
 
     return {
         "FINAL_DECISION": final_decision,
