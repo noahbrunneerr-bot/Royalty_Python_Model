@@ -1424,7 +1424,7 @@ def build_underwriting_reasons(mc, risk, hurdle_rate_used, primary_driver):
     else:
         reasons.append(f"Tail-risk is severe with NPV CVaR (5%) of {npv_cvar:.2f}.")
 
-        reasons.append(f"Primary value driver is currently {primary_driver}.")
+    reasons.append(f"Primary value driver is currently {primary_driver}.")
 
     if primary_driver == "Scenario Layer":
         reasons.append("Overall robustness is driven primarily by coordinated shifts in discount rate, exit multiple and volatility.")
@@ -1838,10 +1838,10 @@ if run_button:
         st.subheader("IC Interpretation")
 
         interpretation_text = decision.get("Interpretation", "No interpretation available.")
-            interpretation_text = (
-                interpretation_text
-                + f" The case is primarily driven by {primary_driver.lower()}."
-            )
+        interpretation_text = (
+            interpretation_text
+            + f" The case is primarily driven by {primary_driver.lower()}."
+        )
 
         if decision["FINAL_DECISION"] == "INVEST":
             st.success(
