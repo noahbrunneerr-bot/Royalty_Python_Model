@@ -1341,18 +1341,23 @@ def make_decision(mc, risk, hurdle_rate_used):
     else:
         risk_flag = "ACCEPTABLE DOWNSIDE RISK"
 
-    if final_decision == "INVEST":
-        interpretation = (
-            "The case meets the minimum return and downside requirements and remains investable under the current macro-consistent underwriting assumptions."
-        )
-    elif final_decision == "INVEST WITH CONDITIONS":
-        interpretation = (
-            "The case is conditionally investable, but valuation sensitivity, downside probability or tail-risk metrics require tighter underwriting discipline and explicit deal protections."
-        )
-    else:
-        interpretation = (
-            "The case does not currently satisfy the required return / downside balance under the applied underwriting assumptions and should not proceed without material repricing or structural improvement."
-        )
+     if final_decision == "INVEST":
+         if return_score >= 4 and risk_score >= 4:
+            interpretation = (
+                "Strong risk-return profile with comfortable buffer above hurdle and contained downside risk."
+            )
+          else:
+              interpretation = (
+                 "Investment meets minimum thresholds, but limited buffer to hurdle suggests disciplined entry pricing is required."
+              )
+        elif final_decision == "INVEST WITH CONDITIONS":
+            interpretation = (
+                "The case is conditionally investable, but valuation sensitivity, downside probability or tail-risk metrics require tighter underwriting discipline and explicit deal protections."
+            )
+        else:
+            interpretation = (
+                "The case does not currently satisfy the required return / downside balance under the applied underwriting assumptions and should not proceed without material repricing or structural improvement."
+            )
 
     return {
         "FINAL_DECISION": final_decision,
@@ -1416,7 +1421,7 @@ def build_underwriting_reasons(mc, risk, hurdle_rate_used, primary_driver):
     else:
         reasons.append(f"Tail-risk is severe with NPV CVaR (5%) of {npv_cvar:.2f}.")
 
-    reasons.append(f"Primary value driver: {primary_driver}.")
+        reasons.append(f"Primary value driver is currently {primary_driver}.")
 
     if primary_driver == "Scenario Layer":
         reasons.append("Overall robustness is driven primarily by coordinated shifts in discount rate, exit multiple and volatility.")
@@ -1721,6 +1726,19 @@ if run_button:
         st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
         st.subheader("IC Snapshot")
 
+        spread = decision.get("Hurdle_Spread", np.nan)
+        if pd.isna(spread):
+            spread_label = "n/a"
+        elif spread > 0.03:
+            spread_label = f"{spread:+.2%} (STRONG BUFFER)"
+        elif spread > 0.01:
+            spread_label = f"{spread:+.2%} (COMFORTABLE)"
+        elif spread > 0:
+            spread_label = f"{spread:+.2%} (TIGHT)"
+        else:
+            spread_label = f"{spread:+.2%} (BELOW HURDLE)"
+
+        
         snap1, snap2, snap3, snap4 = st.columns(4)
         with snap1:
             st.metric("Recommendation", decision["FINAL_DECISION"])
@@ -1729,7 +1747,7 @@ if run_button:
         with snap3:
             st.metric("Total Score", int(decision["Total_Score"]))
         with snap4:
-            st.metric("Hurdle Spread", f'{decision.get("Hurdle_Spread", np.nan):+.2%}')
+            st.metric("Hurdle Spread", spread_label)
 
         st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
         st.subheader("Why Invest / Why Not")
@@ -1817,6 +1835,10 @@ if run_button:
         st.subheader("IC Interpretation")
 
         interpretation_text = decision.get("Interpretation", "No interpretation available.")
+            interpretation_text = (
+                interpretation_text
+                + f" The case is primarily driven by {primary_driver.lower()}."
+            )
 
         if decision["FINAL_DECISION"] == "INVEST":
             st.success(
@@ -2095,11 +2117,25 @@ if run_button:
                 "Decision",
                 "Risk Flag",
             ]]
-        )
         render_clean_table(
             scenario_table_display,
             decision_col="Decision",
             risk_col="Risk Flag",
+        )
+
+        worst_case = scenario_df.loc[scenario_df["NPV Mean"].idxmin()]
+
+        st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
+        st.markdown(
+            f"""
+            <div class="method-note" style="border-left: 4px solid {RED}; background: {RED_SOFT};">
+                <b>Worst-case scenario:</b> {worst_case['Scenario']} &nbsp;&nbsp;&nbsp;
+                <b>NPV Mean:</b> {worst_case['NPV Mean']:.2f} &nbsp;&nbsp;&nbsp;
+                <b>Prob(NPV&lt;0):</b> {worst_case['Prob(NPV<0)']:.2%} &nbsp;&nbsp;&nbsp;
+                <b>Decision:</b> {worst_case['Decision']}
+            </div>
+            """,
+            unsafe_allow_html=True,
         )
 
         st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
