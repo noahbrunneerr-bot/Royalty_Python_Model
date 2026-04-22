@@ -2065,49 +2065,50 @@ if run_button:
         st.markdown("## Top Value Drivers")
         max_impact = driver_df["Impact Score"].max() if not driver_df.empty else 1.0
 
-for _, row in driver_df.iterrows():
-    impact_ratio = 0 if max_impact == 0 else min(row["Impact Score"] / max_impact, 1.0)
-    fill_pct = impact_ratio * 100
+        for _, row in driver_df.iterrows():
+            impact_ratio = 0 if max_impact == 0 else min(row["Impact Score"] / max_impact, 1.0)
+            fill_pct = impact_ratio * 100
 
-    driver_name = row["Driver"]
+            driver_name = row["Driver"]
 
-    if driver_name == "Valuation Discount Rate":
-        explanation = "Primary sensitivity driver — small changes materially impact NPV."
-    elif driver_name == "Scenario Layer":
-        explanation = "Macro + multiple + volatility jointly define robustness."
-    else:
-        explanation = "Structural contract features shape downside protection."
+            if driver_name == "Valuation Discount Rate":
+                explanation = "Primary sensitivity driver — small changes materially impact NPV."
+            elif driver_name == "Scenario Layer":
+                explanation = "Macro + multiple + volatility jointly define robustness."
+            else:
+                explanation = "Structural contract features shape downside protection."
 
-    st.markdown(
-        f"""
-        <div class="driver-row">
-            <div class="driver-main">
-                <div class="driver-rank">#{int(row['Rank'])}</div>
-                <div class="driver-title">{row['Driver']}</div>
-                <div class="driver-desc">{row['Why it matters']}</div>
-                <div class="driver-desc" style="margin-top:6px; color:#64748b;">{explanation}</div>
-            </div>
-            <div class="driver-side">
-                <div class="driver-side-label">Impact Score</div>
-                <div class="driver-side-value">{row['Impact Score']:.2f}</div>
-                <div class="driver-bar-wrap">
-                    <div class="driver-bar-fill" style="width:{fill_pct:.1f}%"></div>
+            st.markdown(
+                f"""
+                <div class="driver-row">
+                    <div class="driver-main">
+                        <div class="driver-rank">#{int(row['Rank'])}</div>
+                        <div class="driver-title">{row['Driver']}</div>
+                        <div class="driver-desc">{row['Why it matters']}</div>
+                        <div class="driver-desc" style="margin-top:6px; color:#64748b;">{explanation}</div>
+                    </div>
+                    <div class="driver-side">
+                        <div class="driver-side-label">Impact Score</div>
+                        <div class="driver-side-value">{row['Impact Score']:.2f}</div>
+                        <div class="driver-bar-wrap">
+                            <div class="driver-bar-fill" style="width:{fill_pct:.1f}%"></div>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+                """,
+                unsafe_allow_html=True,
+            )
 
-    st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
-    st.subheader("Optional Stylised Downside Overlay")
-    if use_tail_overlay:
-        o1, o2 = st.columns(2)
-        o1.metric("Tail Events Triggered", fmt_int(overlay_stats["tail_event_count"]))
-        o2.metric("Super-Tail Events Triggered", fmt_int(overlay_stats["super_tail_event_count"]))
-        st.caption("Enabled as a prototype extension. Primary downside still comes from volatility and stressed scenarios.")
-    else:
-        st.info("Overlay disabled. Primary downside is currently captured through Monte Carlo volatility, scenario stress and valuation sensitivity.")
+        st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
+        st.subheader("Optional Stylised Downside Overlay")
+
+        if use_tail_overlay:
+            o1, o2 = st.columns(2)
+            o1.metric("Tail Events Triggered", fmt_int(overlay_stats["tail_event_count"]))
+            o2.metric("Super-Tail Events Triggered", fmt_int(overlay_stats["super_tail_event_count"]))
+            st.caption("Enabled as a prototype extension. Primary downside still comes from volatility and stressed scenarios.")
+        else:
+            st.info("Overlay disabled. Primary downside is currently captured through Monte Carlo volatility, scenario stress and valuation sensitivity.")
 
     with tab2:
         st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
