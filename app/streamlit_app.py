@@ -2099,8 +2099,8 @@ for _, row in driver_df.iterrows():
         unsafe_allow_html=True,
     )
 
-        st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
-        st.subheader("Optional Stylised Downside Overlay")
+    st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
+    st.subheader("Optional Stylised Downside Overlay")
         if use_tail_overlay:
             o1, o2 = st.columns(2)
             o1.metric("Tail Events Triggered", fmt_int(overlay_stats["tail_event_count"]))
