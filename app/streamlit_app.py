@@ -2101,13 +2101,13 @@ for _, row in driver_df.iterrows():
 
     st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
     st.subheader("Optional Stylised Downside Overlay")
-        if use_tail_overlay:
-            o1, o2 = st.columns(2)
-            o1.metric("Tail Events Triggered", fmt_int(overlay_stats["tail_event_count"]))
-            o2.metric("Super-Tail Events Triggered", fmt_int(overlay_stats["super_tail_event_count"]))
-            st.caption("Enabled as a prototype extension. Primary downside still comes from volatility and stressed scenarios.")
-        else:
-            st.info("Overlay disabled. Primary downside is currently captured through Monte Carlo volatility, scenario stress and valuation sensitivity.")
+    if use_tail_overlay:
+        o1, o2 = st.columns(2)
+        o1.metric("Tail Events Triggered", fmt_int(overlay_stats["tail_event_count"]))
+        o2.metric("Super-Tail Events Triggered", fmt_int(overlay_stats["super_tail_event_count"]))
+        st.caption("Enabled as a prototype extension. Primary downside still comes from volatility and stressed scenarios.")
+    else:
+        st.info("Overlay disabled. Primary downside is currently captured through Monte Carlo volatility, scenario stress and valuation sensitivity.")
 
     with tab2:
         st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
