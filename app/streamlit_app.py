@@ -484,6 +484,9 @@ st.markdown(
 
 st.markdown('<div class="app-kicker">Investor Underwriting Interface</div>', unsafe_allow_html=True)
 st.title("Royalty Valuation Tool")
+st.caption(
+    "Investor-grade royalty valuation with integrated Monte Carlo risk analysis and IC decision framework."
+)
 st.markdown(
     '<div class="app-subtitle">Standalone investor-level royalty valuation, scenario analysis and underwriting decision support.</div>',
     unsafe_allow_html=True,
@@ -1345,11 +1348,13 @@ def make_decision(mc, risk, hurdle_rate_used):
     if final_decision == "INVEST":
         if return_score >= 4 and risk_score >= 4:
             interpretation = (
-                "Strong risk-return profile with comfortable buffer above hurdle and contained downside risk."
+                f"Attractive risk-return profile: IRR exceeds the hurdle by {hurdle_spread:.2%} "
+                f"with contained downside risk (Prob<0 = {prob_neg:.1%}, CVaR = {npv_cvar:.2f})."
             )
         else:
             interpretation = (
-                "Investment meets minimum thresholds, but limited buffer to hurdle suggests disciplined entry pricing is required."
+                f"Investment case clears minimum thresholds, but excess return remains limited "
+                f"(spread {hurdle_spread:.2%}), requiring disciplined entry valuation."
             )
 
     elif final_decision == "INVEST WITH CONDITIONS":
@@ -1796,7 +1801,11 @@ if run_button:
                 for p in caution_points:
                     st.markdown(f"- {p}")
             else:
-                st.caption("No major caution flags identified under the current assumptions.")
+                st.markdown(
+                    "- Limited excess return buffer vs hurdle\n"
+                    "- Sensitivity to valuation discount rate changes\n"
+                    "- Long-duration cashflow profile increases macro exposure"
+                )
 
         st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
         st.subheader("Macro Context")
@@ -1862,7 +1871,20 @@ if run_button:
 
         st.subheader("Deal Header")
         h1, h2, h3, h4 = st.columns(4)
-        h1.metric("IRR Mean", fmt_pct(mc["irr_mean"]), delta=f"{decision.get('Hurdle_Spread', np.nan):+.2%} vs hurdle")
+        spread = mc["irr_mean"] - macro_base_config["hurdle_rate"]
+
+        if spread > 0.02:
+            spread_label = "STRONG"
+        elif spread > 0:
+            spread_label = "TIGHT"
+        else:
+            spread_label = "BELOW"
+
+        h1.metric(
+            "IRR Mean",
+            fmt_pct(mc["irr_mean"]),
+            delta=f"{spread:+.2%} ({spread_label}) vs hurdle"
+        )
         h2.metric("MOIC Mean", fmt_x(mc["moic_mean"]), delta=f"{mc['moic_mean'] - 2.0:+.2f}x vs 2.0x")
         h3.metric("Expected NPV", fmt_num(mc["npv_mean"]))
         h4.metric("Prob(NPV < 0)", fmt_pct(risk["prob_npv_negative"]))
@@ -2046,6 +2068,14 @@ if run_button:
         for _, row in driver_df.iterrows():
             impact_ratio = 0 if max_impact == 0 else min(row["Impact Score"] / max_impact, 1.0)
             fill_pct = impact_ratio * 100
+                driver_name = row["Driver"]
+
+                if driver_name == "Valuation Discount Rate":
+                    explanation = "Primary sensitivity driver — small changes materially impact NPV."
+                elif driver_name == "Scenario Layer":
+                    explanation = "Macro + multiple + volatility jointly define robustness."
+                else:
+                    explanation = "Structural contract features shape downside protection."
 
             st.markdown(
                 f"""
@@ -2054,6 +2084,7 @@ if run_button:
                         <div class="driver-rank">#{int(row['Rank'])}</div>
                         <div class="driver-title">{row['Driver']}</div>
                         <div class="driver-desc">{row['Why it matters']}</div>
+                        <div class="driver-desc" style="margin-top:6px; color:#64748b;">{explanation}</div>
                     </div>
                     <div class="driver-side">
                         <div class="driver-side-label">Impact Score</div>
