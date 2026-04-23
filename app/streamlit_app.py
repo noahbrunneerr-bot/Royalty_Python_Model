@@ -846,7 +846,7 @@ def render_scenario_card(row: pd.Series, base_irr: float):
                 delta_irr = 0.0
             
             st.markdown(
-                f'<div style="font-size:11px; color:#6b7280; margin-top:3px;">Δ vs Base: {delta_irr:+.2%}</div>',
+                f'<div style="font-size:11px; color:#6b7280; margin-top:3px;">Δ vs Base (IRR): {delta_irr:+.2%}</div>',
                 unsafe_allow_html=True,
             )
         
@@ -865,7 +865,7 @@ def render_scenario_card(row: pd.Series, base_irr: float):
                 delta_npv = 0.0
             
             st.markdown(
-                f'<div style="font-size:11px; color:#6b7280; margin-top:3px;">Δ NPV vs Base: {delta_npv:+.2f}</div>',
+                f'<div style="font-size:11px; color:#6b7280; margin-top:3px;">Δ vs Base (NPV): {delta_npv:+,.1f}</div>',
                 unsafe_allow_html=True,
             )
             
