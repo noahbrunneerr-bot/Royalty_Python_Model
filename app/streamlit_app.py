@@ -1440,6 +1440,55 @@ def build_underwriting_reasons(mc, risk, hurdle_rate_used, primary_driver):
 
     return reasons
 
+def build_why_invest_lists(mc, risk, decision, primary_driver, hurdle_rate_used):
+    positive_points = []
+    caution_points = []
+
+    irr_mean = mc["irr_mean"]
+    moic_mean = mc["moic_mean"]
+    npv_mean = mc["npv_mean"]
+    prob_neg = risk["prob_npv_negative"]
+    npv_cvar = risk["npv_cvar_5"]
+    hurdle_spread = irr_mean - hurdle_rate_used
+
+    # Positive points
+    if hurdle_spread > 0:
+        positive_points.append(f"IRR clears the hurdle at {irr_mean:.2%}.")
+    if moic_mean >= 2.5:
+        positive_points.append(f"MOIC is strong at {moic_mean:.2f}x.")
+    elif moic_mean >= 2.0:
+        positive_points.append(f"MOIC remains acceptable at {moic_mean:.2f}x.")
+    if npv_mean > 0:
+        positive_points.append(f"Expected NPV remains positive at {npv_mean:.2f}.")
+    if prob_neg <= 0.05:
+        positive_points.append(f"Downside probability remains contained at {prob_neg:.2%}.")
+    elif prob_neg <= 0.20:
+        positive_points.append(f"Downside probability stays moderate at {prob_neg:.2%}.")
+    if npv_cvar > -5:
+        positive_points.append(f"Tail-risk remains within tolerance with NPV CVaR of {npv_cvar:.2f}.")
+    elif npv_cvar > -15:
+        positive_points.append(f"Tail-risk remains manageable with NPV CVaR of {npv_cvar:.2f}.")
+
+    # Caution points
+    if hurdle_spread <= 0.01:
+        caution_points.append("Limited excess return buffer vs hurdle.")
+    if primary_driver == "Valuation Discount Rate":
+        caution_points.append("Sensitivity to valuation discount rate changes.")
+    elif primary_driver == "Scenario Layer":
+        caution_points.append("Coordinated macro shifts can materially weaken robustness.")
+    else:
+        caution_points.append("Contract structure remains an important downside driver.")
+    if prob_neg >= 0.20:
+        caution_points.append(f"Downside probability is elevated at {prob_neg:.2%}.")
+    if npv_cvar <= -15:
+        caution_points.append(f"Tail-risk is meaningful with NPV CVaR of {npv_cvar:.2f}.")
+    if decision["FINAL_DECISION"] == "INVEST WITH CONDITIONS":
+        caution_points.append("Investment case remains viable, but only with conditions.")
+    elif decision["FINAL_DECISION"] == "REJECT":
+        caution_points.append("Current assumptions do not support standalone investability.")
+
+    return positive_points, caution_points
+    
 
 def build_ic_summary_text(decision, mc, risk, macro_base_rate, hurdle_rate_used, macro_source, fed_display, underwriting_reasons):
     hard_gates = "Yes" if decision.get("Hard_Gates_Passed", False) else "No"
@@ -1744,6 +1793,14 @@ if run_button:
             primary_driver,
         )
 
+        positive_points, caution_points = build_why_invest_lists(
+            mc,
+            risk,
+            decision,
+            primary_driver,
+            macro_base_config["hurdle_rate"],
+        )
+
         run_metadata = {
             "preset": "Reference Defaults / Manual Override",
             "run_timestamp_utc": datetime.utcnow().isoformat(),
@@ -1773,6 +1830,7 @@ if run_button:
 
     with tab1:
         st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
+
         st.subheader("IC Snapshot")
 
         spread = decision.get("Hurdle_Spread", np.nan)
@@ -1803,33 +1861,8 @@ if run_button:
 
         why1, why2 = st.columns(2)
 
-        positive_points = []
-        caution_points = []
-
-        if mc["irr_mean"] >= macro_base_config["hurdle_rate"]:
-            positive_points.append(f'IRR clears the hurdle at {mc["irr_mean"]:.2%}.')
-        else:
-            caution_points.append(f'IRR misses the hurdle at {mc["irr_mean"]:.2%}.')
-
-        if mc["moic_mean"] >= 2.5:
-            positive_points.append(f'MOIC is strong at {mc["moic_mean"]:.2f}x.')
-        elif mc["moic_mean"] >= 2.0:
-            positive_points.append(f'MOIC is acceptable at {mc["moic_mean"]:.2f}x.')
-        else:
-            caution_points.append(f'MOIC is weak at {mc["moic_mean"]:.2f}x.')
-
-        if risk["prob_npv_negative"] <= 0.20:
-            positive_points.append(f'Downside probability remains contained at {risk["prob_npv_negative"]:.2%}.')
-        else:
-            caution_points.append(f'Downside probability is elevated at {risk["prob_npv_negative"]:.2%}.')
-
-        if risk["npv_cvar_5"] > -20:
-            positive_points.append(f'Tail-risk remains within tolerance with NPV CVaR of {risk["npv_cvar_5"]:.2f}.')
-        else:
-            caution_points.append(f'Tail-risk is severe with NPV CVaR of {risk["npv_cvar_5"]:.2f}.')
-
         with why1:
-            st.markdown("**Why it works**")
+            st.markdown("**Investment merits**")
             if positive_points:
                 for p in positive_points:
                     st.markdown(f"- {p}")
@@ -1837,16 +1870,12 @@ if run_button:
                 st.caption("No major strengths identified under the current assumptions.")
 
         with why2:
-            st.markdown("**What to watch**")
+            st.markdown("**Key watchpoints**")
             if caution_points:
                 for p in caution_points:
                     st.markdown(f"- {p}")
             else:
-                st.markdown(
-                    "- Limited excess return buffer vs hurdle\n"
-                    "- Sensitivity to valuation discount rate changes\n"
-                    "- Long-duration cashflow profile increases macro exposure"
-                )
+                st.caption("No major caution flags identified under the current assumptions.")
 
         st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
         st.subheader("Macro Context")
@@ -1865,17 +1894,12 @@ if run_button:
 
        
         st.markdown(f"""
-        <div style="font-size:12px; color:#6b7280; margin-top:6px;">
-        Run ID: {run_id} | Base Case | MC runs: {base_config.get("n_sims", 3000)} | Discount Rate: {macro_base_rate:.2%}
-        </div>
-        """, unsafe_allow_html=True)
+            <div style="font-size:12px; color:#6b7280; margin-top:6px;">
+            Run ID: {run_id} | Base Case | IRR: {mc["irr_mean"]:.2%} | Prob(NPV&lt;0): {risk["prob_npv_negative"]:.2%} | MC: {base_config.get("n_simulations", 3000)} | r: {macro_base_rate:.2%}
+            </div>
+            """, unsafe_allow_html=True)
 
-        st.markdown(f"""
-        <div style="font-size:12px; color:#6b7280;">
-        Base Case Snapshot: IRR {mc["irr_mean"]:.2%} | Prob(NPV&lt;0): {risk["prob_npv_negative"]:.2%} | MC: {base_config.get("n_sims", 3000)}
-        </div>
-        """, unsafe_allow_html=True)
-
+      
         st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
         st.subheader("Decision Scorecard")
 
