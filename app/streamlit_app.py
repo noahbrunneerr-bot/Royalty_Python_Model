@@ -842,13 +842,15 @@ def render_scenario_card(row: pd.Series, base_irr: float):
             st.markdown(f'<div class="scenario-v">{fmt_pct(row["IRR Mean"])}</div>', unsafe_allow_html=True)
         
             delta_irr = row["IRR Mean"] - base_irr
-            
             if abs(delta_irr) < 1e-6:
-                delta_irr_color = "#6b7280"  # grau
-            elif delta_irr > 0:
+                delta_irr = 0.0
+            
+            if delta_irr > 0:
                 delta_irr_color = "#16a34a"
-            else:
+            elif delta_irr < 0:
                 delta_irr_color = "#dc2626"
+            else:
+                delta_irr_color = "#6b7280"
             
             st.markdown(
                 f'<div style="font-size:11px; color:{delta_irr_color}; margin-top:3px;">Δ vs Base: {delta_irr:+.2%}</div>',
@@ -866,18 +868,21 @@ def render_scenario_card(row: pd.Series, base_irr: float):
             st.markdown(f'<div class="scenario-v">{fmt_num(row["NPV Mean"])}</div>', unsafe_allow_html=True)
         
             delta_npv = row["NPV_Delta_vs_Base"]
-            
             if abs(delta_npv) < 1e-6:
-                delta_npv_color = "#6b7280"
-            elif delta_npv > 0:
+                delta_npv = 0.0
+            
+            if delta_npv > 0:
                 delta_npv_color = "#16a34a"
-            else:
+            elif delta_npv < 0:
                 delta_npv_color = "#dc2626"
+            else:
+                delta_npv_color = "#6b7280"
             
             st.markdown(
                 f'<div style="font-size:11px; color:{delta_npv_color}; margin-top:3px;">Δ NPV vs Base: {delta_npv:+.2f}</div>',
                 unsafe_allow_html=True,
             )
+            
         with c4:
             st.markdown('<div class="scenario-k">Prob(NPV<0)</div>', unsafe_allow_html=True)
             st.markdown(f'<div class="scenario-v">{fmt_pct(row["Prob(NPV<0)"])}</div>', unsafe_allow_html=True)
