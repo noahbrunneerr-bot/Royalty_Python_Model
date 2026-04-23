@@ -698,6 +698,9 @@ def format_mc_display(df: pd.DataFrame) -> pd.DataFrame:
 
 def scenario_table_for_display(df: pd.DataFrame) -> pd.DataFrame:
     out = df.copy()
+
+    if "NPV_Delta_vs_Base" in out.columns:
+        out["NPV_Delta_vs_Base"] = out["NPV_Delta_vs_Base"].map(lambda x: f"{x:+,.2f}")
     out["Valuation Discount Rate"] = out["Valuation Discount Rate"].map(lambda x: f"{x:.2%}")
     out["Hurdle Rate"] = out["Hurdle Rate"].map(lambda x: f"{x:.2%}")
     out["Exit Multiple"] = out["Exit Multiple"].map(lambda x: f"{x:.1f}x")
@@ -848,7 +851,6 @@ def render_scenario_card(row: pd.Series, base_irr: float):
             st.markdown('<div class="scenario-k">MOIC Mean</div>', unsafe_allow_html=True)
             st.markdown(f'<div class="scenario-v">{fmt_x(row["MOIC Mean"])}</div>', unsafe_allow_html=True)
 
-        st.markdown("")
 
         c3, c4 = st.columns(2)
         with c3:
@@ -857,7 +859,7 @@ def render_scenario_card(row: pd.Series, base_irr: float):
         
             delta_npv = row["NPV_Delta_vs_Base"]
             st.markdown(
-                f'<div style="font-size:11px; color:#6b7280; margin-top:3px;">Δ vs Base: {delta_npv:+.2f}</div>',
+                f'<div style="font-size:11px; color:#6b7280; margin-top:3px;">Δ NPV vs Base: {delta_npv:+.2f}</div>',
                 unsafe_allow_html=True,
             )
         
@@ -2254,6 +2256,7 @@ if run_button:
                 "IRR Mean",
                 "MOIC Mean",
                 "NPV Mean",
+                "NPV_Delta_vs_Base",
                 "Prob(NPV<0)",
                 "NPV CVaR (5%)",
                 "Decision",
