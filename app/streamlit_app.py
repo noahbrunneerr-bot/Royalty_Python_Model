@@ -837,18 +837,16 @@ def render_scenario_card(row: pd.Series, base_irr: float):
         with c1:
             st.markdown('<div class="scenario-k">IRR Mean</div>', unsafe_allow_html=True)
             st.markdown(f'<div class="scenario-v">{fmt_pct(row["IRR Mean"])}</div>', unsafe_allow_html=True)
-
-        delta_irr = row["IRR Mean"] - base_irr
-        delta_npv = row["NPV_Delta_vs_Base"]
-
-        st.markdown(
-            f'<div style="font-size:11px; color:#6b7280; margin-top:3px;">Δ IRR: {delta_irr:+.2%} | Δ NPV: {delta_npv:+.2f}</div>',
-            unsafe_allow_html=True,
-        )
-
+        
+            delta_irr = row["IRR Mean"] - base_irr
+            st.markdown(
+                f'<div style="font-size:11px; color:#6b7280; margin-top:3px;">Δ vs Base: {delta_irr:+.2%}</div>',
+                unsafe_allow_html=True,
+            )
+        
         with c2:
             st.markdown('<div class="scenario-k">MOIC Mean</div>', unsafe_allow_html=True)
-            st.markdown(f'<div class="scenario-v">{fmt_x(row["MOIC Mean"])}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="scenario-v">{fmt_x(row["MOIC Mean"])}</div>', unsafe_allow_html=True)wn(f'<div class="scenario-v">{fmt_x(row["MOIC Mean"])}</div>', unsafe_allow_html=True)
 
         st.markdown("")
 
@@ -856,12 +854,18 @@ def render_scenario_card(row: pd.Series, base_irr: float):
         with c3:
             st.markdown('<div class="scenario-k">NPV Mean</div>', unsafe_allow_html=True)
             st.markdown(f'<div class="scenario-v">{fmt_num(row["NPV Mean"])}</div>', unsafe_allow_html=True)
-
+        
+            delta_npv = row["NPV_Delta_vs_Base"]
+            st.markdown(
+                f'<div style="font-size:11px; color:#6b7280; margin-top:3px;">Δ vs Base: {delta_npv:+.2f}</div>',
+                unsafe_allow_html=True,
+            )
+        
         with c4:
             st.markdown('<div class="scenario-k">Prob(NPV<0)</div>', unsafe_allow_html=True)
             st.markdown(f'<div class="scenario-v">{fmt_pct(row["Prob(NPV<0)"])}</div>', unsafe_allow_html=True)
-
-        st.markdown('</div>', unsafe_allow_html=True)
+            
+            st.markdown('</div>', unsafe_allow_html=True)
 
         st.markdown(
             f"""
