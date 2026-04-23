@@ -1589,6 +1589,9 @@ def build_scenario_table(base_config, base_df, base_mc, base_risk, base_decision
         })
 
     scenario_df = pd.DataFrame(rows).round(4)
+
+    for k, v in meta_info.items():
+        scenario_df[k] = v
     return scenario_df, macro_df, macro_hist_scenarios, macro_source, macro_base_rate
 
 
@@ -1733,7 +1736,11 @@ if run_button:
             base_decision=decision,
         )
         discount_df = build_discount_rate_sensitivity(base_config, reference_clean)
+        for k, v in meta_info.items():
+            discount_df[k] = v
         driver_df = build_driver_table(scenario_df, discount_df)
+        for k, v in meta_info.items():
+            driver_df[k] = v
 
         primary_driver = driver_df.iloc[0]["Driver"] if not driver_df.empty else "Valuation Discount Rate"
         underwriting_reasons = build_underwriting_reasons(
@@ -1749,6 +1756,14 @@ if run_button:
             "inputs": base_config,
             "decision": decision,
             "risk": risk,
+        }
+
+        meta_info = {
+            "Run_ID": run_id,
+            "IRR_Mean_Base": mc["irr_mean"],
+            "Prob_NPV_Neg_Base": risk["prob_npv_negative"],
+            "MC_Runs": base_config.get("n_sims", 3000),
+            "Discount_Rate_Base": macro_base_rate
         }
 
     tab1, tab2, tab3 = st.tabs(["Overview", "Scenarios", "Downloads"])
@@ -1851,7 +1866,13 @@ if run_button:
 
         st.markdown(f"""
         <div style="font-size:12px; color:#6b7280; margin-top:6px;">
-        Run ID: {run_id} | Scenario: Base calibration | MC runs: {base_config.get("n_sims", "n/a")} | Discount Rate: {macro_base_rate:.2%}
+        Run ID: {run_id} | Base Case | MC runs: {base_config.get("n_sims", 3000)} | Discount Rate: {macro_base_rate:.2%}
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown(f"""
+        <div style="font-size:12px; color:#6b7280;">
+        Base Case Snapshot: IRR {mc["irr_mean"]:.2%} | Prob(NPV&lt;0): {risk["prob_npv_negative"]:.2%} | MC: {base_config.get("n_sims", 3000)}
         </div>
         """, unsafe_allow_html=True)
 
