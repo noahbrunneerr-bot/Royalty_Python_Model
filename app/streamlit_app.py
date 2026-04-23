@@ -846,7 +846,7 @@ def render_scenario_card(row: pd.Series, base_irr: float):
         
         with c2:
             st.markdown('<div class="scenario-k">MOIC Mean</div>', unsafe_allow_html=True)
-            st.markdown(f'<div class="scenario-v">{fmt_x(row["MOIC Mean"])}</div>', unsafe_allow_html=True)wn(f'<div class="scenario-v">{fmt_x(row["MOIC Mean"])}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="scenario-v">{fmt_x(row["MOIC Mean"])}</div>', unsafe_allow_html=True)
 
         st.markdown("")
 
