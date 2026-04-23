@@ -793,7 +793,7 @@ def render_status_badge(decision: str):
         st.markdown('<span class="badge-reject">REJECT</span>', unsafe_allow_html=True)
 
 
-def render_scenario_card(row: pd.Series):
+def render_scenario_card(row: pd.Series, base_irr: float):
     status_meta = get_status_meta(row["Decision"])
     risk_meta = get_risk_meta(row["Risk Flag"])
 
@@ -837,6 +837,12 @@ def render_scenario_card(row: pd.Series):
         with c1:
             st.markdown('<div class="scenario-k">IRR Mean</div>', unsafe_allow_html=True)
             st.markdown(f'<div class="scenario-v">{fmt_pct(row["IRR Mean"])}</div>', unsafe_allow_html=True)
+
+            delta_irr = row["IRR Mean"] - base_irr
+            st.markdown(
+                f'<div style="font-size:11px; color:#6b7280; margin-top:3px;">Δ vs Base: {delta_irr:+.2%}</div>',
+                unsafe_allow_html=True,
+            )
 
         with c2:
             st.markdown('<div class="scenario-k">MOIC Mean</div>', unsafe_allow_html=True)
@@ -1451,39 +1457,48 @@ def build_why_invest_lists(mc, risk, decision, primary_driver, hurdle_rate_used)
     npv_cvar = risk["npv_cvar_5"]
     hurdle_spread = irr_mean - hurdle_rate_used
 
+    
     # Positive points
     if hurdle_spread > 0:
-        positive_points.append(f"IRR clears the hurdle at {irr_mean:.2%}.")
+        positive_points.append(f"Return exceeds hurdle by {hurdle_spread:.2%} (tight but positive).")
+
     if moic_mean >= 2.5:
-        positive_points.append(f"MOIC is strong at {moic_mean:.2f}x.")
+        positive_points.append(f"Strong capital efficiency with MOIC {moic_mean:.2f}x.")
     elif moic_mean >= 2.0:
-        positive_points.append(f"MOIC remains acceptable at {moic_mean:.2f}x.")
+        positive_points.append(f"Acceptable capital efficiency with MOIC {moic_mean:.2f}x.")
+
     if npv_mean > 0:
-        positive_points.append(f"Expected NPV remains positive at {npv_mean:.2f}.")
+        positive_points.append(f"Positive valuation cushion (NPV {npv_mean:.2f}).")
+
     if prob_neg <= 0.05:
-        positive_points.append(f"Downside probability remains contained at {prob_neg:.2%}.")
+        positive_points.append(f"Low downside probability ({prob_neg:.2%}).")
     elif prob_neg <= 0.20:
-        positive_points.append(f"Downside probability stays moderate at {prob_neg:.2%}.")
-    if npv_cvar > -5:
-        positive_points.append(f"Tail-risk remains within tolerance with NPV CVaR of {npv_cvar:.2f}.")
+        positive_points.append(f"Moderate downside probability ({prob_neg:.2%}).")
+
+    if npv_cvar > -10:
+        positive_points.append(f"Contained tail risk (CVaR {npv_cvar:.2f}).")
     elif npv_cvar > -15:
-        positive_points.append(f"Tail-risk remains manageable with NPV CVaR of {npv_cvar:.2f}.")
+        positive_points.append(f"Manageable tail risk (CVaR {npv_cvar:.2f}).")
 
     # Caution points
     if hurdle_spread <= 0.01:
         caution_points.append("Limited excess return buffer vs hurdle.")
+
     if primary_driver == "Valuation Discount Rate":
-        caution_points.append("Sensitivity to valuation discount rate changes.")
+        caution_points.append("Required return assumptions materially affect valuation.")
     elif primary_driver == "Scenario Layer":
         caution_points.append("Coordinated macro shifts can materially weaken robustness.")
     else:
-        caution_points.append("Contract structure remains an important downside driver.")
+        caution_points.append("Contract structure remains a relevant downside driver.")
+
     if prob_neg >= 0.20:
-        caution_points.append(f"Downside probability is elevated at {prob_neg:.2%}.")
+        caution_points.append(f"Elevated downside probability ({prob_neg:.2%}).")
+
     if npv_cvar <= -15:
-        caution_points.append(f"Tail-risk is meaningful with NPV CVaR of {npv_cvar:.2f}.")
+        caution_points.append(f"Meaningful tail risk (CVaR {npv_cvar:.2f}).")
+
     if decision["FINAL_DECISION"] == "INVEST WITH CONDITIONS":
-        caution_points.append("Investment case remains viable, but only with conditions.")
+        caution_points.append("Case remains investable, but only with conditions.")
     elif decision["FINAL_DECISION"] == "REJECT":
         caution_points.append("Current assumptions do not support standalone investability.")
 
@@ -1801,6 +1816,11 @@ if run_button:
             macro_base_config["hurdle_rate"],
         )
 
+        worst_case = scenario_df.loc[scenario_df["NPV Mean"].idxmin()]
+        caution_points.append(
+            f"Worst-case scenario ({worst_case['Scenario']}): NPV {worst_case['NPV Mean']:.2f}, Prob(NPV<0) {worst_case['Prob(NPV<0)']:.2%}."
+        )
+        
         run_metadata = {
             "preset": "Reference Defaults / Manual Override",
             "run_timestamp_utc": datetime.utcnow().isoformat(),
@@ -1892,6 +1912,19 @@ if run_button:
             unsafe_allow_html=True,
         )
 
+        fed_decimal = (fed_funds / 100) if fed_funds is not None else np.nan
+        spread_vs_rf = macro_base_rate - fed_decimal if not pd.isna(fed_decimal) else np.nan
+
+        if not pd.isna(spread_vs_rf):
+            st.markdown(
+                f"""
+                <div style="font-size:12px; color:#6b7280; margin-top:4px;">
+                Implied risk premium: {spread_vs_rf:.2%}
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
        
         st.markdown(f"""
             <div style="font-size:12px; color:#6b7280; margin-top:6px;">
@@ -1902,6 +1935,10 @@ if run_button:
       
         st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
         st.subheader("Decision Scorecard")
+
+        st.caption(
+            "Scoring combines return (IRR, MOIC, NPV), risk (downside probability, CVaR) and resilience (P10 IRR, hurdle buffer)."
+        )
 
         score1, score2, score3, score4 = st.columns(4)
         with score1:
@@ -1925,10 +1962,13 @@ if run_button:
         st.subheader("IC Interpretation")
 
         interpretation_text = decision.get("Interpretation", "No interpretation available.")
-        interpretation_text = (
-            interpretation_text
-            + f" The case is primarily driven by {primary_driver.lower()}."
-        )
+
+        if primary_driver == "Scenario Layer":
+            interpretation_text += " Primary value driver is scenario layer, meaning robustness depends on coordinated shifts in rates, multiples and volatility."
+        elif primary_driver == "Valuation Discount Rate":
+            interpretation_text += " Primary value driver is valuation discount rate, indicating high sensitivity to required return assumptions."
+        else:
+            interpretation_text += " Primary value driver is contract structure, meaning value and downside protection are shaped by structural deal mechanics."
 
         if decision["FINAL_DECISION"] == "INVEST":
             st.success(
@@ -2212,7 +2252,7 @@ if run_button:
             with col:
                 if idx < len(rows_list):
                     _, row = rows_list[idx]
-                    render_scenario_card(row)
+                    render_scenario_card(row, base_irr=mc["irr_mean"])
 
         st.markdown("---")
         st.markdown("### Scenario Comparison Table")
