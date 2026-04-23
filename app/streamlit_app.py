@@ -866,7 +866,13 @@ def render_scenario_card(row: pd.Series, base_irr: float):
             st.markdown(f'<div class="scenario-v">{fmt_num(row["NPV Mean"])}</div>', unsafe_allow_html=True)
         
             delta_npv = row["NPV_Delta_vs_Base"]
-            delta_npv_color = "#16a34a" if delta_npv > 0 else "#dc2626" if delta_npv < 0 else "#6b7280"
+            
+            if abs(delta_npv) < 1e-6:
+                delta_npv_color = "#6b7280"
+            elif delta_npv > 0:
+                delta_npv_color = "#16a34a"
+            else:
+                delta_npv_color = "#dc2626"
             
             st.markdown(
                 f'<div style="font-size:11px; color:{delta_npv_color}; margin-top:3px;">Δ NPV vs Base: {delta_npv:+.2f}</div>',
