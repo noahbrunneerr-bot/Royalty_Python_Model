@@ -1489,7 +1489,7 @@ Underwriting Rationale
 # =========================
 # Secondary analyses
 # =========================
-def build_scenario_table(base_config, base_df):
+def build_scenario_table(base_config, base_df, base_mc, base_risk, base_decision):
     macro_cfg, macro_df, macro_hist_scenarios, macro_source, macro_base_rate = build_macro_base_config(base_config)
 
     base_exit_multiple = float(base_config["exit_multiple"])
@@ -1542,6 +1542,23 @@ def build_scenario_table(base_config, base_df):
     quick_cfg = make_secondary_config(macro_cfg)
 
     for s in scenario_inputs:
+                if s["Scenario"] == "Base":
+            rows.append({
+                "Scenario": s["Scenario"],
+                "Scenario Label": s["Scenario Label"],
+                "Valuation Discount Rate": macro_base_rate,
+                "Hurdle Rate": base_config["hurdle_rate"],
+                "Exit Multiple": macro_exit_multiple,
+                "Volatility": base_config["sigma_cf"],
+                "IRR Mean": base_mc["irr_mean"],
+                "MOIC Mean": base_mc["moic_mean"],
+                "NPV Mean": base_mc["npv_mean"],
+                "Prob(NPV<0)": base_risk["prob_npv_negative"],
+                "NPV CVaR (5%)": base_risk["npv_cvar_5"],
+                "Decision": base_decision["FINAL_DECISION"],
+                "Risk Flag": base_decision["Risk_Flag"],
+            })
+            continue
         cfg = quick_cfg.copy()
         cfg["discount_rate"] = s["Valuation Discount Rate"]
         cfg["valuation_discount_rate"] = s["Valuation Discount Rate"]
@@ -1707,7 +1724,11 @@ if run_button:
         decision = make_decision(mc, risk, macro_base_config["hurdle_rate"])
 
         scenario_df, macro_df, macro_hist_scenarios, macro_source, macro_base_rate = build_scenario_table(
-            base_config, reference_clean
+            base_config,
+            reference_clean,
+            base_mc=mc,
+            base_risk=risk,
+            base_decision=decision,
         )
         discount_df = build_discount_rate_sensitivity(base_config, reference_clean)
         driver_df = build_driver_table(scenario_df, discount_df)
