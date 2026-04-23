@@ -1842,8 +1842,8 @@ if run_button:
             "Discount_Rate_Base": macro_base_rate,
         }
 
-for k, v in meta_info.items():
-    scenario_df[k] = v
+        for k, v in meta_info.items():
+            scenario_df[k] = v
 
     tab1, tab2, tab3 = st.tabs(["Overview", "Scenarios", "Downloads"])
 
