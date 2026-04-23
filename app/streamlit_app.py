@@ -838,11 +838,13 @@ def render_scenario_card(row: pd.Series, base_irr: float):
             st.markdown('<div class="scenario-k">IRR Mean</div>', unsafe_allow_html=True)
             st.markdown(f'<div class="scenario-v">{fmt_pct(row["IRR Mean"])}</div>', unsafe_allow_html=True)
 
-            delta_irr = row["IRR Mean"] - base_irr
-            st.markdown(
-                f'<div style="font-size:11px; color:#6b7280; margin-top:3px;">Δ vs Base: {delta_irr:+.2%}</div>',
-                unsafe_allow_html=True,
-            )
+        delta_irr = row["IRR Mean"] - base_irr
+        delta_npv = row["NPV_Delta_vs_Base"]
+
+        st.markdown(
+            f'<div style="font-size:11px; color:#6b7280; margin-top:3px;">Δ IRR: {delta_irr:+.2%} | Δ NPV: {delta_npv:+.2f}</div>',
+            unsafe_allow_html=True,
+        )
 
         with c2:
             st.markdown('<div class="scenario-k">MOIC Mean</div>', unsafe_allow_html=True)
@@ -1653,6 +1655,8 @@ def build_scenario_table(base_config, base_df, base_mc, base_risk, base_decision
         })
 
     scenario_df = pd.DataFrame(rows).round(4)
+    base_npv = scenario_df.loc[scenario_df["Scenario"] == "Base", "NPV Mean"].values[0]
+    scenario_df["NPV_Delta_vs_Base"] = scenario_df["NPV Mean"] - base_npv
     return scenario_df, macro_df, macro_hist_scenarios, macro_source, macro_base_rate
 
 
