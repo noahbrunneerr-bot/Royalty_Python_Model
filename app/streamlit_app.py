@@ -1542,34 +1542,35 @@ def build_scenario_table(base_config, base_df, base_mc, base_risk, base_decision
     quick_cfg = make_secondary_config(macro_cfg)
 
     for s in scenario_inputs:
-                if s["Scenario"] == "Base":
-            rows.append({
-                "Scenario": s["Scenario"],
-                "Scenario Label": s["Scenario Label"],
-                "Valuation Discount Rate": macro_base_rate,
-                "Hurdle Rate": base_config["hurdle_rate"],
-                "Exit Multiple": macro_exit_multiple,
-                "Volatility": base_config["sigma_cf"],
-                "IRR Mean": base_mc["irr_mean"],
-                "MOIC Mean": base_mc["moic_mean"],
-                "NPV Mean": base_mc["npv_mean"],
-                "Prob(NPV<0)": base_risk["prob_npv_negative"],
-                "NPV CVaR (5%)": base_risk["npv_cvar_5"],
-                "Decision": base_decision["FINAL_DECISION"],
-                "Risk Flag": base_decision["Risk_Flag"],
-            })
-            continue
-        cfg = quick_cfg.copy()
-        cfg["discount_rate"] = s["Valuation Discount Rate"]
-        cfg["valuation_discount_rate"] = s["Valuation Discount Rate"]
-        cfg["hurdle_rate"] = base_config["hurdle_rate"]
-        cfg["exit_multiple"] = s["Exit Multiple"]
-        cfg["sigma_cf"] = s["Volatility"]
-        cfg["scenario_name"] = s["Scenario"]
 
-        res = run_sim(cfg, base_df)
-        dec = make_decision(res["monte_carlo"], res["risk"], cfg["hurdle_rate"])
+    if s["Scenario"] == "Base":
+        rows.append({
+            "Scenario": s["Scenario"],
+            "Scenario Label": s["Scenario Label"],
+            "Valuation Discount Rate": macro_base_rate,
+            "Hurdle Rate": base_config["hurdle_rate"],
+            "Exit Multiple": macro_exit_multiple,
+            "Volatility": base_config["sigma_cf"],
+            "IRR Mean": base_mc["irr_mean"],
+            "MOIC Mean": base_mc["moic_mean"],
+            "NPV Mean": base_mc["npv_mean"],
+            "Prob(NPV<0)": base_risk["prob_npv_negative"],
+            "NPV CVaR (5%)": base_risk["npv_cvar_5"],
+            "Decision": base_decision["FINAL_DECISION"],
+            "Risk Flag": base_decision["Risk_Flag"],
+        })
+        continue
 
+    cfg = quick_cfg.copy()
+    cfg["discount_rate"] = s["Valuation Discount Rate"]
+    cfg["valuation_discount_rate"] = s["Valuation Discount Rate"]
+    cfg["hurdle_rate"] = base_config["hurdle_rate"]
+    cfg["exit_multiple"] = s["Exit Multiple"]
+    cfg["sigma_cf"] = s["Volatility"]
+    cfg["scenario_name"] = s["Scenario"]
+
+    res = run_sim(cfg, base_df)
+    dec = make_decision(res["monte_carlo"], res["risk"], cfg["hurdle_rate"])
         rows.append({
             "Scenario": s["Scenario"],
             "Scenario Label": s["Scenario Label"],
