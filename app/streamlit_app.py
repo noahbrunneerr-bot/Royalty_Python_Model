@@ -1808,6 +1808,8 @@ if run_button:
             primary_driver,
         )
 
+        underwriting_reasons = underwriting_reasons[:4]
+
         positive_points, caution_points = build_why_invest_lists(
             mc,
             risk,
@@ -1820,6 +1822,9 @@ if run_button:
         caution_points.append(
             f"Worst-case scenario ({worst_case['Scenario']}): NPV {worst_case['NPV Mean']:.2f}, Prob(NPV<0) {worst_case['Prob(NPV<0)']:.2%}."
         )
+
+        positive_points = positive_points[:3]
+        caution_points = caution_points[:3]
         
         run_metadata = {
             "preset": "Reference Defaults / Manual Override",
@@ -1837,14 +1842,8 @@ if run_button:
             "Discount_Rate_Base": macro_base_rate,
         }
 
-        for k, v in meta_info.items():
-            scenario_df[k] = v
-    
-        for k, v in meta_info.items():
-            discount_df[k] = v
-
-        for k, v in meta_info.items():
-            driver_df[k] = v
+for k, v in meta_info.items():
+    scenario_df[k] = v
 
     tab1, tab2, tab3 = st.tabs(["Overview", "Scenarios", "Downloads"])
 
@@ -1987,25 +1986,6 @@ if run_button:
             )
 
 
-        st.subheader("Deal Header")
-        h1, h2, h3, h4 = st.columns(4)
-        spread = mc["irr_mean"] - macro_base_config["hurdle_rate"]
-
-        if spread > 0.02:
-            spread_label = "STRONG"
-        elif spread > 0:
-            spread_label = "TIGHT"
-        else:
-            spread_label = "BELOW"
-
-        h1.metric(
-            "IRR Mean",
-            fmt_pct(mc["irr_mean"]),
-            delta=f"{spread:+.2%} ({spread_label}) vs hurdle"
-        )
-        h2.metric("MOIC Mean", fmt_x(mc["moic_mean"]), delta=f"{mc['moic_mean'] - 2.0:+.2f}x vs 2.0x")
-        h3.metric("Expected NPV", fmt_num(mc["npv_mean"]))
-        h4.metric("Prob(NPV < 0)", fmt_pct(risk["prob_npv_negative"]))
 
         st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
         st.markdown("## Investment Decision Summary")
