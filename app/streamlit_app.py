@@ -1541,7 +1541,7 @@ def build_scenario_table(base_config, base_df, base_mc, base_risk, base_decision
     rows = []
     quick_cfg = make_secondary_config(macro_cfg)
 
-    for s in scenario_inputs:
+for s in scenario_inputs:
 
     if s["Scenario"] == "Base":
         rows.append({
@@ -1571,21 +1571,22 @@ def build_scenario_table(base_config, base_df, base_mc, base_risk, base_decision
 
     res = run_sim(cfg, base_df)
     dec = make_decision(res["monte_carlo"], res["risk"], cfg["hurdle_rate"])
-        rows.append({
-            "Scenario": s["Scenario"],
-            "Scenario Label": s["Scenario Label"],
-            "Valuation Discount Rate": cfg["valuation_discount_rate"],
-            "Hurdle Rate": cfg["hurdle_rate"],
-            "Exit Multiple": cfg["exit_multiple"],
-            "Volatility": cfg["sigma_cf"],
-            "IRR Mean": res["monte_carlo"]["irr_mean"],
-            "MOIC Mean": res["monte_carlo"]["moic_mean"],
-            "NPV Mean": res["monte_carlo"]["npv_mean"],
-            "Prob(NPV<0)": res["risk"]["prob_npv_negative"],
-            "NPV CVaR (5%)": res["risk"]["npv_cvar_5"],
-            "Decision": dec["FINAL_DECISION"],
-            "Risk Flag": dec["Risk_Flag"],
-        })
+
+    rows.append({
+        "Scenario": s["Scenario"],
+        "Scenario Label": s["Scenario Label"],
+        "Valuation Discount Rate": cfg["valuation_discount_rate"],
+        "Hurdle Rate": cfg["hurdle_rate"],
+        "Exit Multiple": cfg["exit_multiple"],
+        "Volatility": cfg["sigma_cf"],
+        "IRR Mean": res["monte_carlo"]["irr_mean"],
+        "MOIC Mean": res["monte_carlo"]["moic_mean"],
+        "NPV Mean": res["monte_carlo"]["npv_mean"],
+        "Prob(NPV<0)": res["risk"]["prob_npv_negative"],
+        "NPV CVaR (5%)": res["risk"]["npv_cvar_5"],
+        "Decision": dec["FINAL_DECISION"],
+        "Risk Flag": dec["Risk_Flag"],
+    })
 
     scenario_df = pd.DataFrame(rows).round(4)
     return scenario_df, macro_df, macro_hist_scenarios, macro_source, macro_base_rate
