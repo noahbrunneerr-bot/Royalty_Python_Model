@@ -842,7 +842,13 @@ def render_scenario_card(row: pd.Series, base_irr: float):
             st.markdown(f'<div class="scenario-v">{fmt_pct(row["IRR Mean"])}</div>', unsafe_allow_html=True)
         
             delta_irr = row["IRR Mean"] - base_irr
-            delta_irr_color = "#16a34a" if delta_irr > 0 else "#dc2626" if delta_irr < 0 else "#6b7280"
+            
+            if abs(delta_irr) < 1e-6:
+                delta_irr_color = "#6b7280"  # grau
+            elif delta_irr > 0:
+                delta_irr_color = "#16a34a"
+            else:
+                delta_irr_color = "#dc2626"
             
             st.markdown(
                 f'<div style="font-size:11px; color:{delta_irr_color}; margin-top:3px;">Δ vs Base: {delta_irr:+.2%}</div>',
