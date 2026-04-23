@@ -1589,9 +1589,6 @@ def build_scenario_table(base_config, base_df, base_mc, base_risk, base_decision
         })
 
     scenario_df = pd.DataFrame(rows).round(4)
-
-    for k, v in meta_info.items():
-        scenario_df[k] = v
     return scenario_df, macro_df, macro_hist_scenarios, macro_source, macro_base_rate
 
 
@@ -1727,6 +1724,7 @@ if run_button:
         overlay_stats = results["tail_overlay"]
 
         decision = make_decision(mc, risk, macro_base_config["hurdle_rate"])
+        run_id = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
 
         scenario_df, macro_df, macro_hist_scenarios, macro_source, macro_base_rate = build_scenario_table(
             base_config,
@@ -1736,11 +1734,7 @@ if run_button:
             base_decision=decision,
         )
         discount_df = build_discount_rate_sensitivity(base_config, reference_clean)
-        for k, v in meta_info.items():
-            discount_df[k] = v
         driver_df = build_driver_table(scenario_df, discount_df)
-        for k, v in meta_info.items():
-            driver_df[k] = v
 
         primary_driver = driver_df.iloc[0]["Driver"] if not driver_df.empty else "Valuation Discount Rate"
         underwriting_reasons = build_underwriting_reasons(
@@ -1762,9 +1756,18 @@ if run_button:
             "Run_ID": run_id,
             "IRR_Mean_Base": mc["irr_mean"],
             "Prob_NPV_Neg_Base": risk["prob_npv_negative"],
-            "MC_Runs": base_config.get("n_sims", 3000),
-            "Discount_Rate_Base": macro_base_rate
+            "MC_Runs": base_config.get("n_simulations", 3000),
+            "Discount_Rate_Base": macro_base_rate,
         }
+
+        for k, v in meta_info.items():
+            scenario_df[k] = v
+    
+        for k, v in meta_info.items():
+            discount_df[k] = v
+
+        for k, v in meta_info.items():
+            driver_df[k] = v
 
     tab1, tab2, tab3 = st.tabs(["Overview", "Scenarios", "Downloads"])
 
@@ -1860,10 +1863,7 @@ if run_button:
             unsafe_allow_html=True,
         )
 
-        from datetime import datetime
-
-        run_id = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
-
+       
         st.markdown(f"""
         <div style="font-size:12px; color:#6b7280; margin-top:6px;">
         Run ID: {run_id} | Base Case | MC runs: {base_config.get("n_sims", 3000)} | Discount Rate: {macro_base_rate:.2%}
