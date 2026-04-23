@@ -1851,7 +1851,7 @@ if run_button:
 
         st.markdown(f"""
         <div style="font-size:12px; color:#6b7280; margin-top:6px;">
-        Run ID: {run_id} | Model: Monte Carlo Engine | Scenario Set: 4-case framework
+        Run ID: {run_id} | Scenario: Base calibration | MC runs: {base_config.get("n_sims", "n/a")} | Discount Rate: {macro_base_rate:.2%}
         </div>
         """, unsafe_allow_html=True)
 
