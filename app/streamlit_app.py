@@ -1845,6 +1845,16 @@ if run_button:
             unsafe_allow_html=True,
         )
 
+        from datetime import datetime
+
+        run_id = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+
+        st.markdown(f"""
+        <div style="font-size:12px; color:#6b7280; margin-top:6px;">
+        Run ID: {run_id} | Model: Monte Carlo Engine | Scenario Set: 4-case framework
+        </div>
+        """, unsafe_allow_html=True)
+
         st.markdown('<div class="section-gap"></div>', unsafe_allow_html=True)
         st.subheader("Decision Scorecard")
 
